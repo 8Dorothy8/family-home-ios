@@ -168,6 +168,25 @@ class AppStateManager: ObservableObject {
     }
     
     // MARK: - Virtual Pet
+    func createPet(name: String, type: PetType, personality: PetPersonality) {
+        guard var family = currentFamily else { return }
+        
+        let newPet = VirtualPet(
+            name: name,
+            type: type,
+            personality: personality,
+            favoriteFood: getFavoriteFood(for: type),
+            favoriteToy: getFavoriteToy(for: type)
+        )
+        
+        family.virtualPet = newPet
+        currentFamily = family
+        saveFamilyData()
+        
+        // Add legacy support
+        createVirtualPet(name: name, type: type)
+    }
+    
     func createVirtualPet(name: String, type: PetType) {
         guard var family = currentFamily else { return }
         family.virtualPet = VirtualPet(name: name, type: type)
@@ -178,10 +197,19 @@ class AppStateManager: ObservableObject {
     func feedPet() {
         guard var family = currentFamily, var pet = family.virtualPet else { return }
         pet.hunger = min(1.0, pet.hunger + 0.3)
+        pet.happiness = min(1.0, pet.happiness + 0.1)
+        pet.health = min(1.0, pet.health + 0.05)
         pet.lastFed = Date()
         family.virtualPet = pet
         currentFamily = family
         saveFamilyData()
+        
+        // Add notification
+        addNotification(
+            title: "Pet Fed!",
+            body: "\(pet.name) is feeling better now!",
+            type: .petCare
+        )
     }
     
     func playWithPet() {
@@ -192,6 +220,130 @@ class AppStateManager: ObservableObject {
         family.virtualPet = pet
         currentFamily = family
         saveFamilyData()
+        
+        // Add notification
+        addNotification(
+            title: "Play Time!",
+            body: "\(pet.name) had a great time playing!",
+            type: .petCare
+        )
+    }
+    
+    func trainPet() {
+        guard var family = currentFamily, var pet = family.virtualPet else { return }
+        pet.training = min(1.0, pet.training + 0.1)
+        pet.happiness = min(1.0, pet.happiness + 0.15)
+        pet.energy = max(0.0, pet.energy - 0.15)
+        pet.lastTrained = Date()
+        family.virtualPet = pet
+        currentFamily = family
+        saveFamilyData()
+        
+        // Add notification
+        addNotification(
+            title: "Training Progress!",
+            body: "\(pet.name) learned something new!",
+            type: .petCare
+        )
+    }
+    
+    func restPet() {
+        guard var family = currentFamily, var pet = family.virtualPet else { return }
+        pet.energy = min(1.0, pet.energy + 0.4)
+        pet.health = min(1.0, pet.health + 0.1)
+        family.virtualPet = pet
+        currentFamily = family
+        saveFamilyData()
+        
+        // Add notification
+        addNotification(
+            title: "Pet Rested!",
+            body: "\(pet.name) is feeling refreshed!",
+            type: .petCare
+        )
+    }
+    
+    func updatePetAge() {
+        guard var family = currentFamily, var pet = family.virtualPet else { return }
+        pet.age += 1
+        family.virtualPet = pet
+        currentFamily = family
+        saveFamilyData()
+    }
+    
+    func updatePetStatus() {
+        guard var family = currentFamily, var pet = family.virtualPet else { return }
+        
+        // Gradually decrease stats over time
+        let timeSinceLastFed = Date().timeIntervalSince(pet.lastFed)
+        let timeSinceLastPlayed = Date().timeIntervalSince(pet.lastPlayed)
+        
+        // Decrease hunger over time (every hour)
+        if timeSinceLastFed > 3600 {
+            pet.hunger = max(0.0, pet.hunger - 0.05)
+        }
+        
+        // Decrease happiness if not played with recently
+        if timeSinceLastPlayed > 7200 { // 2 hours
+            pet.happiness = max(0.0, pet.happiness - 0.03)
+        }
+        
+        // Decrease energy over time
+        pet.energy = max(0.0, pet.energy - 0.02)
+        
+        // Health affects overall well-being
+        if pet.hunger < 0.3 || pet.happiness < 0.3 {
+            pet.health = max(0.0, pet.health - 0.01)
+        }
+        
+        family.virtualPet = pet
+        currentFamily = family
+        saveFamilyData()
+    }
+    
+    // Helper methods for pet preferences
+    private func getFavoriteFood(for type: PetType) -> String {
+        switch type {
+        case .dog: return "Dog Treats"
+        case .cat: return "Cat Food"
+        case .bird: return "Seeds"
+        case .fish: return "Fish Flakes"
+        case .rabbit: return "Carrots"
+        case .hamster: return "Hamster Pellets"
+        case .turtle: return "Turtle Food"
+        }
+    }
+    
+    private func getFavoriteToy(for type: PetType) -> String {
+        switch type {
+        case .dog: return "Ball"
+        case .cat: return "Laser Pointer"
+        case .bird: return "Mirror"
+        case .fish: return "Bubble Maker"
+        case .rabbit: return "Tunnel"
+        case .hamster: return "Wheel"
+        case .turtle: return "Rock"
+        }
+    }
+    
+    // MARK: - Notifications
+    func addNotification(title: String, body: String, type: NotificationType) {
+        guard let user = currentUser else { return }
+        
+        let notification = Notification(
+            title: title,
+            body: body,
+            type: type,
+            sender: user
+        )
+        
+        notifications.append(notification)
+    }
+    
+    func markNotificationAsRead(_ notification: Notification) {
+        if let index = notifications.firstIndex(where: { $0.id == notification.id }) {
+            notifications[index].isRead = true
+        }
     }
     
     // MARK: - Family Activities

@@ -71,8 +71,16 @@ struct VirtualPet: Codable {
     var happiness: Double = 0.5
     var hunger: Double = 0.5
     var energy: Double = 1.0
+    var health: Double = 1.0
+    var training: Double = 0.0
+    var age: Int = 0 // in days
+    var personality: PetPersonality = .friendly
     var lastFed: Date = Date()
     var lastPlayed: Date = Date()
+    var lastTrained: Date = Date()
+    var createdAt: Date = Date()
+    var favoriteToy: String = "Ball"
+    var favoriteFood: String = "Pet Food"
 }
 
 enum PetType: String, CaseIterable, Codable {
@@ -81,6 +89,17 @@ enum PetType: String, CaseIterable, Codable {
     case bird = "Bird"
     case fish = "Fish"
     case rabbit = "Rabbit"
+    case hamster = "Hamster"
+    case turtle = "Turtle"
+}
+
+enum PetPersonality: String, CaseIterable, Codable {
+    case friendly = "Friendly"
+    case shy = "Shy"
+    case energetic = "Energetic"
+    case lazy = "Lazy"
+    case curious = "Curious"
+    case protective = "Protective"
 }
 
 struct FamilyActivity: Identifiable, Codable {
