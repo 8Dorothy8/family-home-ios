@@ -666,36 +666,287 @@ struct StatusIndicator: View {
 
 struct AvatarView: View {
     let user: User
+    @State private var isAnimating = false
+    @State private var currentPose: String = "standing"
     
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(avatarGradient)
+        VStack(spacing: 4) {
+            // Full body avatar
+            ZStack {
+                // Avatar body
+                fullBodyAvatar
+                
+                // Activity indicator
+                if let activity = user.currentActivity {
+                    activityIndicator(for: activity)
+                }
+                
+                // Online status indicator
+                if user.isOnline {
+                    onlineIndicator
+                }
+            }
             
-            Image(systemName: "person.fill")
-                .font(.title2)
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.2), radius: 1, x: 0, y: 1)
+            // User name
+            Text(user.name)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .lineLimit(1)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(.systemGray6).opacity(0.8))
+                )
+        }
+        .onAppear {
+            startIdleAnimation()
         }
     }
     
-    private var avatarGradient: LinearGradient {
-        let colors: [Color] = [
-            Color(red: 0.4, green: 0.6, blue: 0.9), // Blue
-            Color(red: 0.3, green: 0.8, blue: 0.6), // Green
-            Color(red: 0.9, green: 0.6, blue: 0.3), // Orange
-            Color(red: 0.8, green: 0.4, blue: 0.8), // Purple
-            Color(red: 0.9, green: 0.4, blue: 0.6), // Pink
-            Color(red: 0.8, green: 0.3, blue: 0.3)  // Red
-        ]
-        let index = abs(user.id.uuidString.hashValue) % colors.count
-        let color = colors[index]
+    @ViewBuilder
+    private var fullBodyAvatar: some View {
+        if user.avatar.useBitmoji, let bitmojiUrl = user.avatar.bitmojiAvatarUrl {
+            // Bitmoji avatar
+            AsyncImage(url: URL(string: bitmojiUrl)) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 60, height: 80)
+                    .scaleEffect(isAnimating ? 1.05 : 1.0)
+                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
+            } placeholder: {
+                customAvatar
+            }
+        } else {
+            // Custom full-body avatar
+            customAvatar
+        }
+    }
+    
+    @ViewBuilder
+    private var customAvatar: some View {
+        VStack(spacing: 0) {
+            // Head
+            ZStack {
+                Circle()
+                    .fill(skinColor)
+                    .frame(width: 24, height: 24)
+                
+                // Hair
+                hairView
+                
+                // Eyes
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(.black)
+                        .frame(width: 4, height: 4)
+                    Circle()
+                        .fill(.black)
+                        .frame(width: 4, height: 4)
+                }
+                .offset(y: -2)
+                
+                // Mouth
+                Circle()
+                    .fill(.black)
+                    .frame(width: 6, height: 3)
+                    .offset(y: 4)
+            }
+            
+            // Body
+            Rectangle()
+                .fill(outfitColor)
+                .frame(width: 32, height: 40)
+                .overlay(
+                    // Arms
+                    HStack {
+                        Rectangle()
+                            .fill(skinColor)
+                            .frame(width: 6, height: 20)
+                            .offset(x: -4, y: -5)
+                            .rotationEffect(.degrees(user.avatar.isWaving ? 45 : 0))
+                            .animation(.easeInOut(duration: 0.5), value: user.avatar.isWaving)
+                        
+                        Spacer()
+                        
+                        Rectangle()
+                            .fill(skinColor)
+                            .frame(width: 6, height: 20)
+                            .offset(x: 4, y: -5)
+                            .rotationEffect(.degrees(user.avatar.isPointing ? -30 : 0))
+                            .animation(.easeInOut(duration: 0.5), value: user.avatar.isPointing)
+                    }
+                )
+            
+            // Legs
+            HStack(spacing: 8) {
+                Rectangle()
+                    .fill(pantsColor)
+                    .frame(width: 8, height: 25)
+                
+                Rectangle()
+                    .fill(pantsColor)
+                    .frame(width: 8, height: 25)
+            }
+            .offset(y: -2)
+            
+            // Shoes
+            HStack(spacing: 8) {
+                Ellipse()
+                    .fill(shoesColor)
+                    .frame(width: 10, height: 6)
+                
+                Ellipse()
+                    .fill(shoesColor)
+                    .frame(width: 10, height: 6)
+            }
+            .offset(y: -4)
+        }
+        .scaleEffect(isAnimating ? 1.02 : 1.0)
+        .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: isAnimating)
+    }
+    
+    @ViewBuilder
+    private var hairView: some View {
+        switch user.avatar.hairStyle {
+        case "short":
+            Rectangle()
+                .fill(hairColor)
+                .frame(width: 20, height: 8)
+                .offset(y: -8)
+        case "long":
+            Rectangle()
+                .fill(hairColor)
+                .frame(width: 18, height: 12)
+                .offset(y: -6)
+        case "curly":
+            Circle()
+                .fill(hairColor)
+                .frame(width: 22, height: 10)
+                .offset(y: -8)
+        default:
+            Rectangle()
+                .fill(hairColor)
+                .frame(width: 20, height: 8)
+                .offset(y: -8)
+        }
+    }
+    
+    @ViewBuilder
+    private func activityIndicator(for activity: Activity) -> some View {
+        VStack {
+            HStack {
+                Spacer()
+                
+                VStack(spacing: 2) {
+                    Image(systemName: activityIcon(for: activity.type))
+                        .font(.caption2)
+                        .foregroundColor(.white)
+                    
+                    Text(activity.title)
+                        .font(.caption2)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.black.opacity(0.7))
+                )
+            }
+            
+            Spacer()
+        }
+        .offset(y: -40)
+    }
+    
+    private var onlineIndicator: some View {
+        VStack {
+            HStack {
+                Spacer()
+                
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 8, height: 8)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white, lineWidth: 2)
+                    )
+            }
+            
+            Spacer()
+        }
+        .offset(x: 20, y: -30)
+    }
+    
+    private func startIdleAnimation() {
+        isAnimating = true
         
-        return LinearGradient(
-            gradient: Gradient(colors: [color, color.opacity(0.7)]),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        // Random idle animations
+        Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                // Random pose changes
+                let poses = ["standing", "sitting", "waving"]
+                currentPose = poses.randomElement() ?? "standing"
+            }
+        }
+    }
+    
+    private func activityIcon(for type: ActivityType) -> String {
+        switch type {
+        case .watching: return "tv"
+        case .shopping: return "cart"
+        case .working: return "laptopcomputer"
+        case .exercising: return "figure.run"
+        case .eating: return "fork.knife"
+        case .relaxing: return "bed.double"
+        case .other: return "ellipsis"
+        }
+    }
+    
+    // Color properties
+    private var skinColor: Color {
+        switch user.avatar.skinTone {
+        case "light": return Color(red: 0.95, green: 0.85, blue: 0.75)
+        case "medium": return Color(red: 0.85, green: 0.65, blue: 0.45)
+        case "dark": return Color(red: 0.45, green: 0.25, blue: 0.15)
+        default: return Color(red: 0.95, green: 0.85, blue: 0.75)
+        }
+    }
+    
+    private var hairColor: Color {
+        switch user.avatar.hairColor {
+        case "brown": return Color(red: 0.4, green: 0.2, blue: 0.1)
+        case "black": return Color.black
+        case "blonde": return Color(red: 0.9, green: 0.8, blue: 0.4)
+        case "red": return Color(red: 0.8, green: 0.3, blue: 0.1)
+        default: return Color(red: 0.4, green: 0.2, blue: 0.1)
+        }
+    }
+    
+    private var outfitColor: Color {
+        switch user.avatar.outfit {
+        case "casual": return Color(red: 0.3, green: 0.6, blue: 0.9)
+        case "formal": return Color(red: 0.2, green: 0.2, blue: 0.2)
+        case "sporty": return Color(red: 0.9, green: 0.3, blue: 0.3)
+        default: return Color(red: 0.3, green: 0.6, blue: 0.9)
+        }
+    }
+    
+    private var pantsColor: Color {
+        Color(red: 0.2, green: 0.2, blue: 0.4)
+    }
+    
+    private var shoesColor: Color {
+        switch user.avatar.shoes {
+        case "sneakers": return Color(red: 0.8, green: 0.8, blue: 0.8)
+        case "formal": return Color.black
+        case "sporty": return Color(red: 0.9, green: 0.3, blue: 0.3)
+        default: return Color(red: 0.8, green: 0.8, blue: 0.8)
+        }
     }
 }
 

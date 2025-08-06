@@ -323,6 +323,77 @@ class AppStateManager: ObservableObject {
         }
     }
     
+    // MARK: - Avatar Management
+    func updateAvatar(_ avatar: Avatar) {
+        guard var user = currentUser else { return }
+        user.avatar = avatar
+        currentUser = user
+        saveUserData()
+    }
+    
+    func createBitmojiAvatar(avatarId: String) {
+        guard var user = currentUser else { return }
+        
+        // Generate Bitmoji URL (this would typically come from Bitmoji API)
+        let bitmojiUrl = generateBitmojiUrl(avatarId: avatarId)
+        
+        user.avatar.useBitmoji = true
+        user.avatar.bitmojiAvatarId = avatarId
+        user.avatar.bitmojiAvatarUrl = bitmojiUrl
+        
+        currentUser = user
+        saveUserData()
+    }
+    
+    func generateBitmojiUrl(avatarId: String) -> String {
+        // This is a placeholder - in a real app, you'd integrate with Bitmoji's API
+        // For now, we'll use a mock URL that represents a Bitmoji avatar
+        return "https://api.bitmoji.com/avatar/\(avatarId)/full-body.png"
+    }
+    
+    func setAvatarPose(_ pose: String) {
+        guard var user = currentUser else { return }
+        user.avatar.pose = pose
+        currentUser = user
+        saveUserData()
+    }
+    
+    func setAvatarExpression(_ expression: String) {
+        guard var user = currentUser else { return }
+        user.avatar.expression = expression
+        currentUser = user
+        saveUserData()
+    }
+    
+    func setAvatarOutfit(_ outfit: String) {
+        guard var user = currentUser else { return }
+        user.avatar.outfit = outfit
+        currentUser = user
+        saveUserData()
+    }
+    
+    func triggerAvatarAnimation(_ animation: String) {
+        guard var user = currentUser else { return }
+        
+        switch animation {
+        case "wave":
+            user.avatar.isWaving = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.currentUser?.avatar.isWaving = false
+            }
+        case "point":
+            user.avatar.isPointing = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.currentUser?.avatar.isPointing = false
+            }
+        default:
+            break
+        }
+        
+        currentUser = user
+        saveUserData()
+    }
+    
     // MARK: - Notifications
     func addNotification(title: String, body: String, type: NotificationType) {
         guard let user = currentUser else { return }

@@ -209,38 +209,144 @@ struct OnboardingView: View {
     
     private var avatarCustomizationStep: some View {
         VStack(spacing: 25) {
-            VStack(spacing: 15) {
-                Image(systemName: "person.crop.circle.badge.plus")
-                    .font(.system(size: 60))
-                    .foregroundColor(.blue)
-                
-                Text("Customize Your Avatar")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-            }
+            Text("Create Your Avatar")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
             
-            // Avatar preview with beautiful design
+            // Avatar preview
             AvatarPreviewView(avatar: avatar)
-                .frame(width: 150, height: 150)
+                .frame(height: 120)
+                .padding()
+            
+            // Bitmoji integration
+            VStack(spacing: 15) {
+                HStack {
+                    Image(systemName: "person.crop.circle.badge.plus")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Use Bitmoji")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        Text("Connect with your iPhone Bitmoji for a personalized avatar")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Button("Connect") {
+                        connectBitmoji()
+                    }
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.blue)
+                    )
+                    .foregroundColor(.white)
+                }
                 .padding()
                 .background(
-                    RoundedRectangle(cornerRadius: 25)
-                        .fill(Color.white)
-                        .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 8)
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.systemGray6))
                 )
-                .padding(.horizontal)
-            
-            // Customization options
-            VStack(spacing: 20) {
-                CustomizationRow(title: "Skin Tone", selection: $avatar.skinTone, options: ["light", "medium", "dark"], icon: "paintbrush.fill")
-                CustomizationRow(title: "Hair Style", selection: $avatar.hairStyle, options: ["short", "long", "curly", "straight"], icon: "scissors")
-                CustomizationRow(title: "Hair Color", selection: $avatar.hairColor, options: ["brown", "black", "blonde", "red"], icon: "paintpalette.fill")
-                CustomizationRow(title: "Eye Color", selection: $avatar.eyeColor, options: ["brown", "blue", "green", "hazel"], icon: "eye.fill")
-                CustomizationRow(title: "Clothing", selection: $avatar.clothing, options: ["casual", "formal", "sporty", "elegant"], icon: "tshirt.fill")
             }
-            .padding(.horizontal)
+            
+            // Custom avatar options
+            VStack(spacing: 15) {
+                Text("Or Customize Your Own")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
+                    CustomizationRow(title: "Skin Tone", value: avatar.skinTone) {
+                        showSkinTonePicker()
+                    }
+                    
+                    CustomizationRow(title: "Hair Style", value: avatar.hairStyle) {
+                        showHairStylePicker()
+                    }
+                    
+                    CustomizationRow(title: "Hair Color", value: avatar.hairColor) {
+                        showHairColorPicker()
+                    }
+                    
+                    CustomizationRow(title: "Outfit", value: avatar.outfit) {
+                        showOutfitPicker()
+                    }
+                    
+                    CustomizationRow(title: "Shoes", value: avatar.shoes) {
+                        showShoesPicker()
+                    }
+                    
+                    CustomizationRow(title: "Expression", value: avatar.expression) {
+                        showExpressionPicker()
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            // Navigation buttons
+            HStack {
+                Button("Back") {
+                    withAnimation {
+                        currentStep -= 1
+                    }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                
+                Spacer()
+                
+                Button("Continue") {
+                    withAnimation {
+                        currentStep += 1
+                    }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+            }
         }
+        .padding()
+    }
+    
+    private func connectBitmoji() {
+        // In a real app, this would integrate with Bitmoji's SDK
+        // For now, we'll simulate the connection
+        let mockBitmojiId = "bitmoji_\(UUID().uuidString.prefix(8))"
+        appState.createBitmojiAvatar(avatarId: mockBitmojiId)
+        
+        // Show success message
+        // You could add a toast or alert here
+    }
+    
+    private func showSkinTonePicker() {
+        // Implementation for skin tone picker
+    }
+    
+    private func showHairStylePicker() {
+        // Implementation for hair style picker
+    }
+    
+    private func showHairColorPicker() {
+        // Implementation for hair color picker
+    }
+    
+    private func showOutfitPicker() {
+        // Implementation for outfit picker
+    }
+    
+    private func showShoesPicker() {
+        // Implementation for shoes picker
+    }
+    
+    private func showExpressionPicker() {
+        // Implementation for expression picker
     }
 }
 
@@ -295,6 +401,41 @@ struct FeatureRow: View {
 }
 
 struct CustomizationRow: View {
+    let title: String
+    let value: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    
+                    Text(value.capitalized)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(.systemGray6))
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct CustomizationRowOld: View {
     let title: String
     @Binding var selection: String
     let options: [String]
@@ -484,6 +625,44 @@ struct AvatarPreviewView: View {
         default:
             return "tshirt"
         }
+    }
+}
+
+struct PrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .fontWeight(.semibold)
+            .foregroundColor(.white)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.blue, Color.blue.opacity(0.8)]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+struct SecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .fontWeight(.semibold)
+            .foregroundColor(.blue)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.blue.opacity(0.1))
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 

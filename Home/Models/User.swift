@@ -27,6 +27,25 @@ struct Avatar: Codable {
     var eyeColor: String = "brown"
     var clothing: String = "casual"
     var accessories: [String] = []
+    
+    // Bitmoji integration
+    var useBitmoji: Bool = false
+    var bitmojiAvatarId: String?
+    var bitmojiAvatarUrl: String?
+    
+    // Full body avatar properties
+    var bodyType: String = "average"
+    var height: String = "average"
+    var pose: String = "standing"
+    var expression: String = "happy"
+    var outfit: String = "casual"
+    var shoes: String = "sneakers"
+    
+    // Animation states
+    var isWalking: Bool = false
+    var isSitting: Bool = false
+    var isWaving: Bool = false
+    var isPointing: Bool = false
 }
 
 struct Location: Codable {
