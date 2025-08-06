@@ -7,12 +7,6 @@ struct OnboardingView: View {
     @State private var email = ""
     @State private var avatar = Avatar()
     
-    // Family member setup
-    @State private var familyMembers: [User] = []
-    @State private var newMemberName = ""
-    @State private var newMemberEmail = ""
-    @State private var showingAddMember = false
-    
     // Permissions
     @State private var locationPermission = false
     @State private var notificationPermission = false
@@ -46,14 +40,14 @@ struct OnboardingView: View {
                     // Progress indicator
                     VStack(spacing: 10) {
                         HStack {
-                            Text("Step \(currentStep + 1) of 5")
+                            Text("Step \(currentStep + 1) of 4")
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.secondary)
                             Spacer()
                         }
                         
-                        ProgressView(value: Double(currentStep), total: 4)
+                        ProgressView(value: Double(currentStep), total: 3)
                             .progressViewStyle(LinearProgressViewStyle(tint: .blue))
                             .scaleEffect(y: 2)
                     }
@@ -68,8 +62,6 @@ struct OnboardingView: View {
                     case 2:
                         avatarCustomizationStep
                     case 3:
-                        familySetupStep
-                    case 4:
                         permissionsStep
                     default:
                         welcomeStep
@@ -105,7 +97,7 @@ struct OnboardingView: View {
                         Spacer()
                         
                         Button(action: {
-                            if currentStep == 4 {
+                            if currentStep == 3 {
                                 appState.createAccount(name: name, email: email, avatar: avatar)
                             } else {
                                 withAnimation(.easeInOut(duration: 0.3)) {
@@ -114,9 +106,9 @@ struct OnboardingView: View {
                             }
                         }) {
                             HStack {
-                                Text(currentStep == 4 ? "Complete Setup" : "Next")
+                                Text(currentStep == 3 ? "Complete Setup" : "Next")
                                     .fontWeight(.semibold)
-                                Image(systemName: currentStep == 4 ? "checkmark" : "chevron.right")
+                                Image(systemName: currentStep == 3 ? "checkmark" : "chevron.right")
                                     .font(.caption)
                             }
                             .foregroundColor(.white)
@@ -139,6 +131,7 @@ struct OnboardingView: View {
                     }
                     .padding(.horizontal)
                 }
+                .padding()
             }
             .navigationTitle("Welcome to Family Home")
             .navigationBarHidden(true)
@@ -389,149 +382,6 @@ struct OnboardingView: View {
     
     private func showExpressionPicker() {
         showingExpressionPicker = true
-    }
-    
-    private var familySetupStep: some View {
-        VStack(spacing: 25) {
-            Text("Add Family Members")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
-            
-            Text("Invite your family members to join your virtual home")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            // Family members list
-            if !familyMembers.isEmpty {
-                VStack(spacing: 12) {
-                    Text("Family Members")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    ForEach(familyMembers, id: \.id) { member in
-                        HStack {
-                            AvatarView(user: member)
-                                .frame(width: 40, height: 40)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(member.name)
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                                Text(member.email)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                if let index = familyMembers.firstIndex(where: { $0.id == member.id }) {
-                                    familyMembers.remove(at: index)
-                                }
-                            }) {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                                    .font(.caption)
-                            }
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(.systemGray6))
-                        )
-                    }
-                }
-            }
-            
-            // Add member button
-            Button(action: {
-                showingAddMember = true
-            }) {
-                HStack {
-                    Image(systemName: "person.badge.plus")
-                        .font(.title2)
-                    Text("Add Family Member")
-                        .fontWeight(.semibold)
-                }
-                .foregroundColor(.blue)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.blue, lineWidth: 2)
-                        .background(Color.blue.opacity(0.1))
-                )
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .sheet(isPresented: $showingAddMember) {
-            addMemberSheet
-        }
-    }
-    
-    private var addMemberSheet: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Text("Add Family Member")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                VStack(spacing: 15) {
-                    TextField("Name", text: $newMemberName)
-                        .textFieldStyle(CustomTextFieldStyle())
-                    
-                    TextField("Email", text: $newMemberEmail)
-                        .textFieldStyle(CustomTextFieldStyle())
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                }
-                
-                Button(action: {
-                    if !newMemberName.isEmpty && !newMemberEmail.isEmpty {
-                        let newMember = User(
-                            name: newMemberName,
-                            email: newMemberEmail,
-                            avatar: Avatar(),
-                            keyLocations: []
-                        )
-                        familyMembers.append(newMember)
-                        newMemberName = ""
-                        newMemberEmail = ""
-                        showingAddMember = false
-                    }
-                }) {
-                    Text("Add Member")
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [.blue, .blue.opacity(0.8)]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                        )
-                }
-                .disabled(newMemberName.isEmpty || newMemberEmail.isEmpty)
-                .opacity(newMemberName.isEmpty || newMemberEmail.isEmpty ? 0.6 : 1.0)
-                
-                Spacer()
-            }
-            .padding()
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(trailing: Button("Cancel") {
-                showingAddMember = false
-            })
-        }
     }
     
     private var permissionsStep: some View {
