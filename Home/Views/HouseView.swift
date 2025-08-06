@@ -403,71 +403,237 @@ struct FamilyMemberView: View {
 
 struct VirtualPetView: View {
     let pet: VirtualPet
+    @State private var isAnimating = false
+    @State private var blinkState = false
     
     var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: petIcon)
-                .font(.title)
-                .foregroundColor(petColor)
-                .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+        VStack(spacing: 8) {
+            // Status levels above the pet
+            HStack(spacing: 8) {
+                StatusIndicator(value: pet.hunger, color: .orange, icon: "fork.knife")
+                StatusIndicator(value: pet.happiness, color: .pink, icon: "heart.fill")
+                StatusIndicator(value: pet.energy, color: .blue, icon: "bolt.fill")
+                StatusIndicator(value: pet.health, color: .green, icon: "cross.fill")
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.systemGray6).opacity(0.8))
+            )
             
+            // Animated cat graphic
+            ZStack {
+                // Cat body
+                Ellipse()
+                    .fill(catBodyColor)
+                    .frame(width: 60, height: 40)
+                    .offset(y: 2)
+                
+                // Cat head
+                Circle()
+                    .fill(catHeadColor)
+                    .frame(width: 50, height: 50)
+                
+                // Cat ears
+                HStack(spacing: 20) {
+                    Triangle()
+                        .fill(catEarColor)
+                        .frame(width: 12, height: 8)
+                        .offset(x: -8, y: -15)
+                    
+                    Triangle()
+                        .fill(catEarColor)
+                        .frame(width: 12, height: 8)
+                        .offset(x: 8, y: -15)
+                }
+                
+                // Cat eyes
+                HStack(spacing: 12) {
+                    // Left eye
+                    ZStack {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 12, height: 12)
+                        
+                        Circle()
+                            .fill(.black)
+                            .frame(width: 6, height: 6)
+                            .offset(x: -1, y: -1)
+                        
+                        // Blinking animation
+                        if blinkState {
+                            Rectangle()
+                                .fill(.black)
+                                .frame(width: 12, height: 2)
+                                .offset(y: -1)
+                        }
+                    }
+                    
+                    // Right eye
+                    ZStack {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 12, height: 12)
+                        
+                        Circle()
+                            .fill(.black)
+                            .frame(width: 6, height: 6)
+                            .offset(x: -1, y: -1)
+                        
+                        // Blinking animation
+                        if blinkState {
+                            Rectangle()
+                                .fill(.black)
+                                .frame(width: 12, height: 2)
+                                .offset(y: -1)
+                        }
+                    }
+                }
+                .offset(y: -2)
+                
+                // Cat nose
+                Triangle()
+                    .fill(.pink)
+                    .frame(width: 4, height: 3)
+                    .offset(y: 4)
+                    .rotationEffect(.degrees(180))
+                
+                // Cat mouth
+                Path { path in
+                    path.move(to: CGPoint(x: -4, y: 8))
+                    path.addQuadCurve(to: CGPoint(x: 4, y: 8), control: CGPoint(x: 0, y: 12))
+                }
+                .stroke(Color.black, lineWidth: 1)
+                .offset(y: 6)
+                
+                // Cat whiskers
+                HStack(spacing: 20) {
+                    // Left whiskers
+                    VStack(spacing: 4) {
+                        Rectangle()
+                            .fill(.white)
+                            .frame(width: 8, height: 1)
+                            .offset(x: -4)
+                        Rectangle()
+                            .fill(.white)
+                            .frame(width: 6, height: 1)
+                            .offset(x: -3, y: 1)
+                        Rectangle()
+                            .fill(.white)
+                            .frame(width: 6, height: 1)
+                            .offset(x: -3, y: -1)
+                    }
+                    
+                    // Right whiskers
+                    VStack(spacing: 4) {
+                        Rectangle()
+                            .fill(.white)
+                            .frame(width: 8, height: 1)
+                            .offset(x: 4)
+                        Rectangle()
+                            .fill(.white)
+                            .frame(width: 6, height: 1)
+                            .offset(x: 3, y: 1)
+                        Rectangle()
+                            .fill(.white)
+                            .frame(width: 6, height: 1)
+                            .offset(x: 3, y: -1)
+                    }
+                }
+                .offset(y: 2)
+                
+                // Tail (animated)
+                Path { path in
+                    path.move(to: CGPoint(x: 25, y: 0))
+                    path.addCurve(
+                        to: CGPoint(x: 35, y: -10),
+                        control1: CGPoint(x: 30, y: -5),
+                        control2: CGPoint(x: 35, y: -10)
+                    )
+                }
+                .stroke(catTailColor, lineWidth: 3)
+                .rotationEffect(.degrees(isAnimating ? 10 : -10))
+                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
+            }
+            .scaleEffect(isAnimating ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: isAnimating)
+            
+            // Pet name
             Text(pet.name)
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.systemGray6).opacity(0.8))
+                )
+        }
+        .position(CGPoint(x: 380, y: 120))
+        .onAppear {
+            isAnimating = true
+            startBlinking()
+        }
+    }
+    
+    private func startBlinking() {
+        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                blinkState = true
+            }
             
-            // Pet status indicators
-            HStack(spacing: 6) {
-                StatusIndicator(value: pet.hunger, color: .orange, icon: "fork.knife")
-                StatusIndicator(value: pet.happiness, color: .pink, icon: "heart.fill")
-                StatusIndicator(value: pet.energy, color: .blue, icon: "bolt.fill")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    blinkState = false
+                }
             }
         }
-        .frame(width: 80, height: 100)
-        .background(
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color.white)
-                .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
-        )
-        .position(CGPoint(x: 380, y: 120))
     }
     
-    private var petIcon: String {
+    // Cat color variations based on pet type
+    private var catHeadColor: Color {
         switch pet.type {
-        case .dog:
-            return "dog.fill"
         case .cat:
-            return "cat.fill"
+            return Color(red: 0.9, green: 0.6, blue: 0.3) // Orange cat
+        case .dog:
+            return Color(red: 0.6, green: 0.4, blue: 0.2) // Brown dog
         case .bird:
-            return "bird.fill"
+            return Color(red: 0.3, green: 0.6, blue: 0.9) // Blue bird
         case .fish:
-            return "fish.fill"
+            return Color(red: 0.4, green: 0.8, blue: 0.9) // Cyan fish
         case .rabbit:
-            return "hare.fill"
+            return Color(red: 0.7, green: 0.7, blue: 0.7) // Gray rabbit
         case .hamster:
-            return "circle.fill" // Using circle as placeholder
+            return Color(red: 0.8, green: 0.5, blue: 0.2) // Orange-brown hamster
         case .turtle:
-            return "circle.fill" // Using circle as placeholder
+            return Color(red: 0.3, green: 0.7, blue: 0.3) // Green turtle
         }
     }
     
-    private var petColor: Color {
-        switch pet.type {
-        case .dog:
-            return Color(red: 0.6, green: 0.4, blue: 0.2) // Brown
-        case .cat:
-            return Color(red: 0.9, green: 0.6, blue: 0.3) // Orange
-        case .bird:
-            return Color(red: 0.3, green: 0.6, blue: 0.9) // Blue
-        case .fish:
-            return Color(red: 0.4, green: 0.8, blue: 0.9) // Cyan
-        case .rabbit:
-            return Color(red: 0.7, green: 0.7, blue: 0.7) // Gray
-        case .hamster:
-            return Color(red: 0.8, green: 0.5, blue: 0.2) // Orange-brown
-        case .turtle:
-            return Color(red: 0.3, green: 0.7, blue: 0.3) // Green
-        }
+    private var catBodyColor: Color {
+        catHeadColor.opacity(0.8)
+    }
+    
+    private var catEarColor: Color {
+        catHeadColor.opacity(0.7)
+    }
+    
+    private var catTailColor: Color {
+        catHeadColor.opacity(0.9)
+    }
+}
+
+// Custom triangle shape for cat ears and nose
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
 
@@ -477,14 +643,23 @@ struct StatusIndicator: View {
     let icon: String
     
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.caption2)
+                .font(.caption)
                 .foregroundColor(color)
+                .shadow(color: .black.opacity(0.3), radius: 1, x: 0, y: 1)
             
-            Circle()
-                .fill(value > 0.3 ? color : Color.gray.opacity(0.3))
-                .frame(width: 6, height: 6)
+            // Progress bar
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 12, height: 3)
+                .overlay(
+                    Rectangle()
+                        .fill(value > 0.3 ? color : Color.gray.opacity(0.5))
+                        .frame(width: 12 * value, height: 3)
+                        .animation(.easeInOut(duration: 0.5), value: value)
+                )
+                .cornerRadius(1.5)
         }
     }
 }
