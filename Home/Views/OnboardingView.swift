@@ -7,6 +7,14 @@ struct OnboardingView: View {
     @State private var email = ""
     @State private var avatar = Avatar()
     
+    // Picker state variables
+    @State private var showingSkinTonePicker = false
+    @State private var showingHairStylePicker = false
+    @State private var showingHairColorPicker = false
+    @State private var showingOutfitPicker = false
+    @State private var showingShoesPicker = false
+    @State private var showingExpressionPicker = false
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -118,6 +126,24 @@ struct OnboardingView: View {
             }
             .navigationTitle("Welcome to Family Home")
             .navigationBarHidden(true)
+        }
+        .sheet(isPresented: $showingSkinTonePicker) {
+            PickerSheet(title: "Skin Tone", options: ["light", "medium", "dark"], selection: $avatar.skinTone)
+        }
+        .sheet(isPresented: $showingHairStylePicker) {
+            PickerSheet(title: "Hair Style", options: ["short", "long", "curly", "straight"], selection: $avatar.hairStyle)
+        }
+        .sheet(isPresented: $showingHairColorPicker) {
+            PickerSheet(title: "Hair Color", options: ["brown", "black", "blonde", "red"], selection: $avatar.hairColor)
+        }
+        .sheet(isPresented: $showingOutfitPicker) {
+            PickerSheet(title: "Outfit", options: ["casual", "formal", "sporty", "elegant"], selection: $avatar.outfit)
+        }
+        .sheet(isPresented: $showingShoesPicker) {
+            PickerSheet(title: "Shoes", options: ["sneakers", "formal", "sporty"], selection: $avatar.shoes)
+        }
+        .sheet(isPresented: $showingExpressionPicker) {
+            PickerSheet(title: "Expression", options: ["happy", "sad", "excited", "calm"], selection: $avatar.expression)
         }
     }
     
@@ -266,27 +292,27 @@ struct OnboardingView: View {
                 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
                     CustomizationRow(title: "Skin Tone", value: avatar.skinTone) {
-                        showSkinTonePicker()
+                        showingSkinTonePicker = true
                     }
                     
                     CustomizationRow(title: "Hair Style", value: avatar.hairStyle) {
-                        showHairStylePicker()
+                        showingHairStylePicker = true
                     }
                     
                     CustomizationRow(title: "Hair Color", value: avatar.hairColor) {
-                        showHairColorPicker()
+                        showingHairColorPicker = true
                     }
                     
                     CustomizationRow(title: "Outfit", value: avatar.outfit) {
-                        showOutfitPicker()
+                        showingOutfitPicker = true
                     }
                     
                     CustomizationRow(title: "Shoes", value: avatar.shoes) {
-                        showShoesPicker()
+                        showingShoesPicker = true
                     }
                     
                     CustomizationRow(title: "Expression", value: avatar.expression) {
-                        showExpressionPicker()
+                        showingExpressionPicker = true
                     }
                 }
             }
@@ -326,27 +352,158 @@ struct OnboardingView: View {
     }
     
     private func showSkinTonePicker() {
-        // Implementation for skin tone picker
+        showingSkinTonePicker = true
     }
     
     private func showHairStylePicker() {
-        // Implementation for hair style picker
+        showingHairStylePicker = true
     }
     
     private func showHairColorPicker() {
-        // Implementation for hair color picker
+        showingHairColorPicker = true
     }
     
     private func showOutfitPicker() {
-        // Implementation for outfit picker
+        showingOutfitPicker = true
     }
     
     private func showShoesPicker() {
-        // Implementation for shoes picker
+        showingShoesPicker = true
     }
     
     private func showExpressionPicker() {
-        // Implementation for expression picker
+        showingExpressionPicker = true
+    }
+}
+
+struct PickerSheet: View {
+    let title: String
+    let options: [String]
+    @Binding var selection: String
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Text("Select \(title)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.top)
+                
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
+                    ForEach(options, id: \.self) { option in
+                        Button(action: {
+                            selection = option
+                            dismiss()
+                        }) {
+                            VStack(spacing: 8) {
+                                Text(option.capitalized)
+                                    .font(.headline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(selection == option ? .white : .primary)
+                                
+                                if title == "Skin Tone" {
+                                    Circle()
+                                        .fill(skinToneColor(for: option))
+                                        .frame(width: 40, height: 40)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(selection == option ? Color.white : Color.clear, lineWidth: 3)
+                                        )
+                                } else if title == "Hair Color" {
+                                    Circle()
+                                        .fill(hairColor(for: option))
+                                        .frame(width: 40, height: 40)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(selection == option ? Color.white : Color.clear, lineWidth: 3)
+                                        )
+                                } else {
+                                    Image(systemName: iconForOption(option))
+                                        .font(.title2)
+                                        .foregroundColor(selection == option ? .white : .primary)
+                                }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(selection == option ? 
+                                          LinearGradient(gradient: Gradient(colors: [.blue, .blue.opacity(0.8)]), startPoint: .leading, endPoint: .trailing) :
+                                          LinearGradient(gradient: Gradient(colors: [Color(.systemGray6), Color(.systemGray5)]), startPoint: .leading, endPoint: .trailing)
+                                    )
+                                    .shadow(color: selection == option ? .blue.opacity(0.3) : .clear, radius: 4, x: 0, y: 2)
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.horizontal)
+                
+                Spacer()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(trailing: Button("Cancel") {
+                dismiss()
+            })
+        }
+    }
+    
+    private func skinToneColor(for tone: String) -> Color {
+        switch tone {
+        case "light": return Color(red: 0.98, green: 0.9, blue: 0.8)
+        case "medium": return Color(red: 0.9, green: 0.7, blue: 0.5)
+        case "dark": return Color(red: 0.6, green: 0.4, blue: 0.3)
+        default: return Color(red: 0.98, green: 0.9, blue: 0.8)
+        }
+    }
+    
+    private func hairColor(for color: String) -> Color {
+        switch color {
+        case "brown": return Color(red: 0.6, green: 0.4, blue: 0.2)
+        case "black": return Color(red: 0.2, green: 0.2, blue: 0.2)
+        case "blonde": return Color(red: 0.9, green: 0.8, blue: 0.6)
+        case "red": return Color(red: 0.8, green: 0.4, blue: 0.2)
+        default: return Color(red: 0.6, green: 0.4, blue: 0.2)
+        }
+    }
+    
+    private func iconForOption(_ option: String) -> String {
+        switch title {
+        case "Hair Style":
+            switch option {
+            case "short": return "scissors"
+            case "long": return "person.fill"
+            case "curly": return "waveform.path"
+            case "straight": return "line.diagonal"
+            default: return "person.fill"
+            }
+        case "Outfit":
+            switch option {
+            case "casual": return "tshirt"
+            case "formal": return "person.fill"
+            case "sporty": return "figure.run"
+            case "elegant": return "crown"
+            default: return "tshirt"
+            }
+        case "Shoes":
+            switch option {
+            case "sneakers": return "shoe"
+            case "formal": return "person.fill"
+            case "sporty": return "figure.run"
+            default: return "shoe"
+            }
+        case "Expression":
+            switch option {
+            case "happy": return "face.smiling"
+            case "sad": return "face.dashed"
+            case "excited": return "star.fill"
+            case "calm": return "leaf.fill"
+            default: return "face.smiling"
+            }
+        default:
+            return "circle.fill"
+        }
     }
 }
 
