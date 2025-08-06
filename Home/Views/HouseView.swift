@@ -118,56 +118,305 @@ struct HouseView: View {
     
     private var houseLayoutView: some View {
         ZStack {
-            // House background with realistic floor and walls
-            RoundedRectangle(cornerRadius: 25)
+            // Floor
+            Rectangle()
                 .fill(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color(red: 0.98, green: 0.96, blue: 0.92), // Warm wall color
-                            Color(red: 0.95, green: 0.93, blue: 0.89)
+                            Color(red: 0.95, green: 0.93, blue: 0.88), // Warm wood
+                            Color(red: 0.92, green: 0.90, blue: 0.85)
                         ]),
-                        startPoint: .top,
-                        endPoint: .bottom
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
                 )
+                .frame(width: 400, height: 600)
                 .overlay(
-                    // Floor pattern
+                    // Wood grain pattern
                     Rectangle()
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(red: 0.85, green: 0.75, blue: 0.65), // Wood floor
-                                    Color(red: 0.80, green: 0.70, blue: 0.60)
+                                    Color.clear,
+                                    Color.black.opacity(0.05)
                                 ]),
-                                startPoint: .leading,
-                                endPoint: .trailing
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
                         )
-                        .frame(height: 200)
-                        .position(x: 225, y: 350)
                 )
-                .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 8)
+                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
             
-            // Rooms with realistic styling
-            ForEach(appState.currentFamily?.house.rooms ?? [], id: \.id) { room in
-                RoomView(room: room)
-            }
-            
-            // Furniture with realistic styling
-            ForEach(appState.currentFamily?.house.furniture ?? [], id: \.id) { furniture in
-                FurnitureView(furniture: furniture)
-            }
-            
-            // Family members with improved positioning
-            ForEach(appState.currentFamily?.members ?? [], id: \.id) { member in
-                FamilyMemberView(member: member)
-            }
-            
-            // Virtual pet
-            if let pet = appState.currentFamily?.virtualPet {
-                VirtualPetView(pet: pet)
+            // Walls
+            VStack(spacing: 0) {
+                // Top wall
+                Rectangle()
+                    .fill(Color(red: 0.98, green: 0.96, blue: 0.94))
+                    .frame(width: 400, height: 20)
+                
+                HStack(spacing: 0) {
+                    // Left wall
+                    Rectangle()
+                        .fill(Color(red: 0.98, green: 0.96, blue: 0.94))
+                        .frame(width: 20, height: 560)
+                    
+                    // Main living space
+                    ZStack {
+                        // Living Room (top left)
+                        livingRoomView
+                        
+                        // Kitchen (top right)
+                        kitchenView
+                        
+                        // Dining Room (bottom left)
+                        diningRoomView
+                        
+                        // Bedroom (bottom right)
+                        bedroomView
+                        
+                        // Family members
+                        ForEach(appState.currentFamily?.members ?? [], id: \.id) { member in
+                            FamilyMemberView(member: member)
+                        }
+                        
+                        // Virtual pet
+                        if let pet = appState.currentFamily?.virtualPet {
+                            VirtualPetView(pet: pet)
+                        }
+                    }
+                    .frame(width: 360, height: 560)
+                    
+                    // Right wall
+                    Rectangle()
+                        .fill(Color(red: 0.98, green: 0.96, blue: 0.94))
+                        .frame(width: 20, height: 560)
+                }
+                
+                // Bottom wall
+                Rectangle()
+                    .fill(Color(red: 0.98, green: 0.96, blue: 0.94))
+                    .frame(width: 400, height: 20)
             }
         }
+        .frame(width: 400, height: 600)
+    }
+    
+    private var livingRoomView: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0.95, green: 0.97, blue: 1.0),
+                            Color(red: 0.90, green: 0.94, blue: 0.98)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 180, height: 280)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.blue.opacity(0.3), lineWidth: 2)
+                )
+            
+            VStack(spacing: 8) {
+                Text("Living Room")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white.opacity(0.9))
+                    )
+                
+                // Furniture
+                HStack(spacing: 15) {
+                    // Couch
+                    VStack {
+                        Image(systemName: "sofa.fill")
+                            .font(.title2)
+                            .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.2))
+                        Text("Couch")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    // TV
+                    VStack {
+                        Image(systemName: "tv.fill")
+                            .font(.title2)
+                            .foregroundColor(.black)
+                        Text("TV")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+            }
+            .padding(.top, 8)
+        }
+        .position(x: 90, y: 140)
+    }
+    
+    private var kitchenView: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 1.0, green: 0.95, blue: 0.90),
+                            Color(red: 0.98, green: 0.93, blue: 0.88)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 180, height: 280)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.orange.opacity(0.3), lineWidth: 2)
+                )
+            
+            VStack(spacing: 8) {
+                Text("Kitchen")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(.orange)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white.opacity(0.9))
+                    )
+                
+                // Kitchen furniture
+                HStack(spacing: 15) {
+                    // Stove
+                    VStack {
+                        Image(systemName: "flame.fill")
+                            .font(.title2)
+                            .foregroundColor(.red)
+                        Text("Stove")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    // Sink
+                    VStack {
+                        Image(systemName: "drop.fill")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                        Text("Sink")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+            }
+            .padding(.top, 8)
+        }
+        .position(x: 270, y: 140)
+    }
+    
+    private var diningRoomView: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0.90, green: 0.95, blue: 0.90),
+                            Color(red: 0.85, green: 0.92, blue: 0.87)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 180, height: 280)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.green.opacity(0.3), lineWidth: 2)
+                )
+            
+            VStack(spacing: 8) {
+                Text("Dining Room")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white.opacity(0.9))
+                    )
+                
+                // Dining furniture
+                VStack(spacing: 8) {
+                    Image(systemName: "table.furniture")
+                        .font(.title2)
+                        .foregroundColor(Color(red: 0.5, green: 0.3, blue: 0.1))
+                    Text("Dining Table")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+            }
+            .padding(.top, 8)
+        }
+        .position(x: 90, y: 420)
+    }
+    
+    private var bedroomView: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(red: 0.95, green: 0.90, blue: 0.95),
+                            Color(red: 0.92, green: 0.87, blue: 0.92)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 180, height: 280)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.purple.opacity(0.3), lineWidth: 2)
+                )
+            
+            VStack(spacing: 8) {
+                Text("Bedroom")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(.purple)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white.opacity(0.9))
+                    )
+                
+                // Bedroom furniture
+                VStack(spacing: 8) {
+                    Image(systemName: "bed.double.fill")
+                        .font(.title2)
+                        .foregroundColor(Color(red: 0.8, green: 0.8, blue: 0.9))
+                    Text("Bed")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+            }
+            .padding(.top, 8)
+        }
+        .position(x: 270, y: 420)
     }
     
     private var bottomToolbar: some View {
