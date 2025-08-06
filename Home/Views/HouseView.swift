@@ -444,6 +444,10 @@ struct VirtualPetView: View {
             return "fish.fill"
         case .rabbit:
             return "hare.fill"
+        case .hamster:
+            return "circle.fill" // Using circle as placeholder
+        case .turtle:
+            return "circle.fill" // Using circle as placeholder
         }
     }
     
@@ -459,6 +463,10 @@ struct VirtualPetView: View {
             return Color(red: 0.4, green: 0.8, blue: 0.9) // Cyan
         case .rabbit:
             return Color(red: 0.7, green: 0.7, blue: 0.7) // Gray
+        case .hamster:
+            return Color(red: 0.8, green: 0.5, blue: 0.2) // Orange-brown
+        case .turtle:
+            return Color(red: 0.3, green: 0.7, blue: 0.3) // Green
         }
     }
 }

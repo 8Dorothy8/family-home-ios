@@ -171,13 +171,10 @@ class AppStateManager: ObservableObject {
     func createPet(name: String, type: PetType, personality: PetPersonality) {
         guard var family = currentFamily else { return }
         
-        let newPet = VirtualPet(
-            name: name,
-            type: type,
-            personality: personality,
-            favoriteFood: getFavoriteFood(for: type),
-            favoriteToy: getFavoriteToy(for: type)
-        )
+        var newPet = VirtualPet(name: name, type: type)
+        newPet.personality = personality
+        newPet.favoriteFood = getFavoriteFood(for: type)
+        newPet.favoriteToy = getFavoriteToy(for: type)
         
         family.virtualPet = newPet
         currentFamily = family
