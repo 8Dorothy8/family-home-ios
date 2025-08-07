@@ -23,9 +23,6 @@ struct HouseView: View {
                 .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Header
-                    headerView
-                    
                     // House layout
                     ScrollView([.horizontal, .vertical]) {
                         houseLayoutView
@@ -76,44 +73,6 @@ struct HouseView: View {
         .sheet(isPresented: $showingMessages) {
             MessagesView()
         }
-    }
-    
-    private var headerView: some View {
-        VStack(spacing: 15) {
-            if let family = appState.currentFamily {
-                Text(family.name)
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                
-                HStack(spacing: 25) {
-                    ForEach(family.members) { member in
-                        VStack(spacing: 8) {
-                            AvatarView(user: member)
-                                .frame(width: 50, height: 50)
-                                .overlay(
-                                    Circle()
-                                        .stroke(member.isOnline ? Color.green : Color.gray.opacity(0.3), lineWidth: 3)
-                                )
-                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                            
-                            Text(member.name)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 20)
-        .padding(.horizontal)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white)
-                .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 5)
-        )
-        .padding(.horizontal)
     }
     
     private var houseLayoutView: some View {
@@ -173,16 +132,6 @@ struct HouseView: View {
                         
                         // Bedroom (bottom right)
                         bedroomView
-                        
-                        // Family members
-                        ForEach(appState.currentFamily?.members ?? [], id: \.id) { member in
-                            FamilyMemberView(member: member)
-                        }
-                        
-                        // Virtual pet
-                        if let pet = appState.currentFamily?.virtualPet {
-                            VirtualPetView(pet: pet)
-                        }
                     }
                     .frame(width: 360, height: 560)
                     
