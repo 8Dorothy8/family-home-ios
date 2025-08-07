@@ -1,6 +1,9 @@
 import Foundation
 import SwiftUI
 import CoreLocation
+import FirebaseCore
+import FirebaseAuth
+import FirebaseFirestore
 
 class AppStateManager: ObservableObject {
     @Published var currentUser: User?
@@ -10,11 +13,14 @@ class AppStateManager: ObservableObject {
     @Published var isLoading = false
     @Published var messages: [Message] = []
     @Published var notifications: [Notification] = []
+    @Published var errorMessage: String?
     
     private let locationManager = CLLocationManager()
+    private let firebaseManager = FirebaseManager.shared
     
     init() {
         setupLocationManager()
+        setupFirebaseIntegration()
         loadUserData()
     }
     
@@ -23,31 +29,82 @@ class AppStateManager: ObservableObject {
         locationManager.requestWhenInUseAuthorization()
     }
     
+    private func setupFirebaseIntegration() {
+        // Listen to Firebase authentication state changes
+        firebaseManager.$isAuthenticated
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$isAuthenticated)
+        
+        firebaseManager.$currentUser
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$currentUser)
+        
+        firebaseManager.$currentFamily
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$currentFamily)
+        
+        firebaseManager.$isLoading
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$isLoading)
+        
+        firebaseManager.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$errorMessage)
+    }
+    
     // MARK: - Authentication
     func createAccount(name: String, email: String, avatar: Avatar) {
         isLoading = true
+        errorMessage = nil
         
-        let newUser = User(
-            name: name,
-            email: email,
-            avatar: avatar,
-            keyLocations: []
-        )
+        // Generate a secure password for the user
+        let password = generateSecurePassword()
         
-        currentUser = newUser
-        saveUserData()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.isLoading = false
-            self.isAuthenticated = true
-            self.isOnboarding = false
+        firebaseManager.signUp(name: name, email: email, password: password, avatar: avatar) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                
+                switch result {
+                case .success(let user):
+                    self?.currentUser = user
+                    self?.isAuthenticated = true
+                    self?.isOnboarding = false
+                    self?.saveUserData()
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                }
+            }
         }
     }
     
     func signIn(email: String) {
         isLoading = true
+        errorMessage = nil
         
-        // Simulate sign in
+        // For demo purposes, we'll use a default password
+        // In production, you'd have a proper sign-in flow
+        let password = "demo123" // This should be handled properly in production
+        
+        firebaseManager.signIn(email: email, password: password) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                
+                switch result {
+                case .success(let user):
+                    self?.currentUser = user
+                    self?.isAuthenticated = true
+                    self?.isOnboarding = false
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                    // Fallback to local sign-in for demo
+                    self?.localSignIn(email: email)
+                }
+            }
+        }
+    }
+    
+    private func localSignIn(email: String) {
+        // Fallback local sign-in for demo purposes
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             self.isLoading = false
             self.isAuthenticated = true
@@ -56,16 +113,39 @@ class AppStateManager: ObservableObject {
     }
     
     func signOut() {
-        currentUser = nil
-        currentFamily = nil
-        isAuthenticated = false
-        isOnboarding = true
-        messages = []
-        notifications = []
+        do {
+            try firebaseManager.signOut()
+        } catch {
+            // Fallback to local sign-out
+            currentUser = nil
+            currentFamily = nil
+            isAuthenticated = false
+            isOnboarding = true
+            messages = []
+            notifications = []
+        }
     }
     
     // MARK: - Family Management
     func createFamily(name: String) {
+        guard let user = currentUser else { return }
+        
+        firebaseManager.createFamily(name: name) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let family):
+                    self?.currentFamily = family
+                    self?.saveFamilyData()
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                    // Fallback to local family creation
+                    self?.localCreateFamily(name: name)
+                }
+            }
+        }
+    }
+    
+    private func localCreateFamily(name: String) {
         guard let user = currentUser else { return }
         
         let newFamily = Family(
@@ -80,7 +160,22 @@ class AppStateManager: ObservableObject {
     }
     
     func joinFamily(familyId: String) {
-        // Simulate joining family
+        firebaseManager.joinFamily(inviteCode: familyId) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let family):
+                    self?.currentFamily = family
+                    self?.saveFamilyData()
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                    // Fallback to local family joining
+                    self?.localJoinFamily(familyId: familyId)
+                }
+            }
+        }
+    }
+    
+    private func localJoinFamily(familyId: String) {
         guard let user = currentUser else { return }
         
         let existingFamily = Family(
@@ -477,5 +572,10 @@ class AppStateManager: ObservableObject {
             furniture: [couch, tv],
             theme: .modern
         )
+    }
+    
+    private func generateSecurePassword() -> String {
+        let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return String((0..<10).map { _ in letters.randomElement()! })
     }
 } 
