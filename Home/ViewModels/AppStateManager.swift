@@ -1,9 +1,9 @@
 import Foundation
 import SwiftUI
 import CoreLocation
-import FirebaseCore
-import FirebaseAuth
-import FirebaseFirestore
+// import FirebaseCore
+// import FirebaseAuth
+// import FirebaseFirestore
 
 class AppStateManager: ObservableObject {
     @Published var currentUser: User?
@@ -16,11 +16,11 @@ class AppStateManager: ObservableObject {
     @Published var errorMessage: String?
     
     private let locationManager = CLLocationManager()
-    private let firebaseManager = FirebaseManager.shared
+    // private let firebaseManager = FirebaseManager.shared
     
     init() {
         setupLocationManager()
-        setupFirebaseIntegration()
+        // setupFirebaseIntegration()
         loadUserData()
     }
     
@@ -29,6 +29,7 @@ class AppStateManager: ObservableObject {
         locationManager.requestWhenInUseAuthorization()
     }
     
+    /*
     private func setupFirebaseIntegration() {
         // Listen to Firebase authentication state changes
         firebaseManager.$isAuthenticated
@@ -51,6 +52,7 @@ class AppStateManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: &$errorMessage)
     }
+    */
     
     // MARK: - Authentication
     func createAccount(name: String, email: String, avatar: Avatar) {
@@ -60,21 +62,21 @@ class AppStateManager: ObservableObject {
         // Generate a secure password for the user
         let password = generateSecurePassword()
         
-        firebaseManager.signUp(name: name, email: email, password: password, avatar: avatar) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
+        // firebaseManager.signUp(name: name, email: email, password: password, avatar: avatar) { [weak self] result in
+        //     DispatchQueue.main.async {
+        //         self?.isLoading = false
                 
-                switch result {
-                case .success(let user):
-                    self?.currentUser = user
-                    self?.isAuthenticated = true
-                    self?.isOnboarding = false
-                    self?.saveUserData()
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                }
-            }
-        }
+        //         switch result {
+        //         case .success(let user):
+        //             self?.currentUser = user
+        //             self?.isAuthenticated = true
+        //             self?.isOnboarding = false
+        //             self?.saveUserData()
+        //         case .failure(let error):
+        //             self?.errorMessage = error.localizedDescription
+        //         }
+        //     }
+        // }
     }
     
     func signIn(email: String) {
@@ -85,22 +87,22 @@ class AppStateManager: ObservableObject {
         // In production, you'd have a proper sign-in flow
         let password = "demo123" // This should be handled properly in production
         
-        firebaseManager.signIn(email: email, password: password) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
+        // firebaseManager.signIn(email: email, password: password) { [weak self] result in
+        //     DispatchQueue.main.async {
+        //         self?.isLoading = false
                 
-                switch result {
-                case .success(let user):
-                    self?.currentUser = user
-                    self?.isAuthenticated = true
-                    self?.isOnboarding = false
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                    // Fallback to local sign-in for demo
-                    self?.localSignIn(email: email)
-                }
-            }
-        }
+        //         switch result {
+        //         case .success(let user):
+        //             self?.currentUser = user
+        //             self?.isAuthenticated = true
+        //             self?.isOnboarding = false
+        //         case .failure(let error):
+        //             self?.errorMessage = error.localizedDescription
+        //             // Fallback to local sign-in for demo
+        //             self?.localSignIn(email: email)
+        //         }
+        //     }
+        // }
     }
     
     private func localSignIn(email: String) {
@@ -114,7 +116,7 @@ class AppStateManager: ObservableObject {
     
     func signOut() {
         do {
-            try firebaseManager.signOut()
+            // try firebaseManager.signOut()
         } catch {
             // Fallback to local sign-out
             currentUser = nil
@@ -130,19 +132,19 @@ class AppStateManager: ObservableObject {
     func createFamily(name: String) {
         guard let user = currentUser else { return }
         
-        firebaseManager.createFamily(name: name) { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let family):
-                    self?.currentFamily = family
-                    self?.saveFamilyData()
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                    // Fallback to local family creation
-                    self?.localCreateFamily(name: name)
-                }
-            }
-        }
+        // firebaseManager.createFamily(name: name) { [weak self] result in
+        //     DispatchQueue.main.async {
+        //         switch result {
+        //         case .success(let family):
+        //             self?.currentFamily = family
+        //             self?.saveFamilyData()
+        //         case .failure(let error):
+        //             self?.errorMessage = error.localizedDescription
+        //             // Fallback to local family creation
+        //             self?.localCreateFamily(name: name)
+        //         }
+        //     }
+        // }
     }
     
     private func localCreateFamily(name: String) {
@@ -160,19 +162,19 @@ class AppStateManager: ObservableObject {
     }
     
     func joinFamily(familyId: String) {
-        firebaseManager.joinFamily(inviteCode: familyId) { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let family):
-                    self?.currentFamily = family
-                    self?.saveFamilyData()
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                    // Fallback to local family joining
-                    self?.localJoinFamily(familyId: familyId)
-                }
-            }
-        }
+        // firebaseManager.joinFamily(inviteCode: familyId) { [weak self] result in
+        //     DispatchQueue.main.async {
+        //         switch result {
+        //         case .success(let family):
+        //             self?.currentFamily = family
+        //             self?.saveFamilyData()
+        //         case .failure(let error):
+        //             self?.errorMessage = error.localizedDescription
+        //             // Fallback to local family joining
+        //             self?.localJoinFamily(familyId: familyId)
+        //         }
+        //     }
+        // }
     }
     
     private func localJoinFamily(familyId: String) {

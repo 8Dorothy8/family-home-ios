@@ -1,16 +1,16 @@
 import Foundation
-import FirebaseCore
-import FirebaseAuth
-import FirebaseFirestore
-import Combine
+// import FirebaseCore
+// import FirebaseAuth
+// import FirebaseFirestore
+// import Combine
 
 class FirebaseManager: ObservableObject {
     static let shared = FirebaseManager()
     
     // Services
-    private let authService = FirebaseAuthService.shared
-    private let firestoreService = FirebaseFirestoreService.shared
-    private let storageService = FirebaseStorageService.shared
+    // private let authService = FirebaseAuthService.shared
+    // private let firestoreService = FirebaseFirestoreService.shared
+    // private let storageService = FirebaseStorageService.shared
     
     // Published properties
     @Published var currentUser: User?
@@ -20,22 +20,23 @@ class FirebaseManager: ObservableObject {
     @Published var errorMessage: String?
     
     // Listeners
-    private var familyListener: ListenerRegistration?
-    private var messagesListener: ListenerRegistration?
+    // private var familyListener: ListenerRegistration?
+    // private var messagesListener: ListenerRegistration?
     
     private init() {
-        setupAuthStateListener()
+        // setupAuthStateListener()
     }
     
     // MARK: - Initialization
     func configure() {
-        FirebaseConfig.shared.configure()
-        authService.initialize()
-        firestoreService.initialize()
-        storageService.initialize()
+        // FirebaseConfig.shared.configure()
+        // authService.initialize()
+        // firestoreService.initialize()
+        // storageService.initialize()
     }
     
     // MARK: - Authentication State Listener
+    /*
     private func setupAuthStateListener() {
         Auth.auth().addStateDidChangeListener { [weak self] _, user in
             DispatchQueue.main.async {
@@ -51,34 +52,20 @@ class FirebaseManager: ObservableObject {
             }
         }
     }
+    */
     
     // MARK: - Authentication
     func signUp(name: String, email: String, password: String, avatar: Avatar, completion: @escaping (Result<User, Error>) -> Void) {
         isLoading = true
         errorMessage = nil
         
-        authService.signUp(email: email, password: password) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                
-                switch result {
-                case .success(var user):
-                    user.name = name
-                    user.avatar = avatar
-                    self?.currentUser = user
-                    self?.saveUserData(user: user) { saveResult in
-                        switch saveResult {
-                        case .success:
-                            completion(.success(user))
-                        case .failure(let error):
-                            completion(.failure(error))
-                        }
-                    }
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                    completion(.failure(error))
-                }
-            }
+        // Simulate sign up for now
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.isLoading = false
+            let user = User(name: name, email: email, avatar: avatar, keyLocations: [])
+            self?.currentUser = user
+            self?.isAuthenticated = true
+            completion(.success(user))
         }
     }
     
@@ -86,36 +73,25 @@ class FirebaseManager: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        authService.signIn(email: email, password: password) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                
-                switch result {
-                case .success(let user):
-                    self?.currentUser = user
-                    self?.fetchFamilyData(for: user)
-                    completion(.success(user))
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                    completion(.failure(error))
-                }
-            }
+        // Simulate sign in for now
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.isLoading = false
+            let user = User(name: "Demo User", email: email, avatar: Avatar(), keyLocations: [])
+            self?.currentUser = user
+            self?.isAuthenticated = true
+            completion(.success(user))
         }
     }
     
     func signOut() {
-        do {
-            try authService.signOut()
-            currentUser = nil
-            currentFamily = nil
-            isAuthenticated = false
-            removeListeners()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        currentUser = nil
+        currentFamily = nil
+        isAuthenticated = false
+        // removeListeners()
     }
     
     // MARK: - User Data
+    /*
     private func fetchUserData(userId: String) {
         let db = Firestore.firestore()
         db.collection("users").document(userId).getDocument { [weak self] document, error in
@@ -169,63 +145,41 @@ class FirebaseManager: ObservableObject {
             }
         }
     }
+    */
     
     // MARK: - Family Management
     func createFamily(name: String, completion: @escaping (Result<Family, Error>) -> Void) {
-        guard let currentUser = authService.getCurrentUser() else {
-            completion(.failure(NSError(domain: "FirebaseManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "No authenticated user"])))
-            return
-        }
-        
         isLoading = true
         errorMessage = nil
         
-        firestoreService.createFamily(name: name, createdBy: currentUser.uid) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                
-                switch result {
-                case .success(let family):
-                    self?.currentFamily = family
-                    self?.setupFamilyListener(familyId: family.id?.uuidString ?? "")
-                    completion(.success(family))
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                    completion(.failure(error))
-                }
-            }
+        // Simulate family creation for now
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.isLoading = false
+            let house = House(rooms: [], furniture: [])
+            let family = Family(name: name, members: [self?.currentUser].compactMap { $0 }, house: house, virtualPet: nil, activities: [])
+            self?.currentFamily = family
+            completion(.success(family))
         }
     }
     
     func joinFamily(inviteCode: String, completion: @escaping (Result<Family, Error>) -> Void) {
-        guard let currentUser = authService.getCurrentUser() else {
-            completion(.failure(NSError(domain: "FirebaseManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "No authenticated user"])))
-            return
-        }
-        
         isLoading = true
         errorMessage = nil
         
-        firestoreService.joinFamily(inviteCode: inviteCode, userId: currentUser.uid) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                
-                switch result {
-                case .success(let family):
-                    self?.currentFamily = family
-                    self?.setupFamilyListener(familyId: family.id?.uuidString ?? "")
-                    completion(.success(family))
-                case .failure(let error):
-                    self?.errorMessage = error.localizedDescription
-                    completion(.failure(error))
-                }
-            }
+        // Simulate joining family for now
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.isLoading = false
+            let house = House(rooms: [], furniture: [])
+            let family = Family(name: "Demo Family", members: [self?.currentUser].compactMap { $0 }, house: house, virtualPet: nil, activities: [])
+            self?.currentFamily = family
+            completion(.success(family))
         }
     }
     
     private func fetchFamilyData(for user: User) {
         // This would typically fetch the family data based on the user's familyId
         // For now, we'll just check if the user is part of any family
+        /*
         let db = Firestore.firestore()
         db.collection("families").whereField("members", arrayContains: authService.getCurrentUser()?.uid ?? "").getDocuments { [weak self] snapshot, error in
             if let error = error {
@@ -244,7 +198,7 @@ class FirebaseManager: ObservableObject {
                 members: [],
                 house: House(rooms: [], furniture: [], theme: .modern),
                 virtualPet: nil,
-                inviteCode: data["inviteCode"] as? String ?? ""
+                activities: []
             )
             
             DispatchQueue.main.async {
@@ -252,9 +206,11 @@ class FirebaseManager: ObservableObject {
                 self?.setupFamilyListener(familyId: document.documentID)
             }
         }
+        */
     }
     
     // MARK: - Real-time Listeners
+    /*
     private func setupFamilyListener(familyId: String) {
         let db = Firestore.firestore()
         
@@ -274,7 +230,7 @@ class FirebaseManager: ObservableObject {
                 members: [],
                 house: House(rooms: [], furniture: [], theme: .modern),
                 virtualPet: nil,
-                inviteCode: data["inviteCode"] as? String ?? ""
+                activities: []
             )
             
             DispatchQueue.main.async {
@@ -289,28 +245,13 @@ class FirebaseManager: ObservableObject {
         messagesListener?.remove()
         messagesListener = nil
     }
+    */
     
     // MARK: - Messages
     func sendMessage(content: String, type: MessageType = .text, completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let currentUser = authService.getCurrentUser(),
-              let familyId = currentFamily?.id?.uuidString else {
-            completion(.failure(NSError(domain: "FirebaseManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "No family selected"])))
-            return
-        }
-        
-        let message = Message(
-            id: UUID(),
-            senderId: currentUser.uid,
-            content: content,
-            type: type,
-            timestamp: Date(),
-            isRead: false
-        )
-        
-        firestoreService.sendMessage(familyId: familyId, message: message) { result in
-            DispatchQueue.main.async {
-                completion(result)
-            }
+        // Simulate sending message for now
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            completion(.success(()))
         }
     }
     
