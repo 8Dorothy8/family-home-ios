@@ -243,111 +243,7 @@ struct OnboardingView: View {
     }
     
     private var avatarCustomizationStep: some View {
-        VStack(spacing: 25) {
-            Text("Create Your Avatar")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
-            
-            // Avatar preview
-            AvatarPreviewView(avatar: avatar)
-                .frame(height: 120)
-                .padding()
-            
-            // Bitmoji integration
-            VStack(spacing: 15) {
-                HStack {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                        .font(.title2)
-                        .foregroundColor(.blue)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Use Bitmoji")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                        
-                        Text("Connect with your iPhone Bitmoji for a personalized avatar")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Button("Connect") {
-                        connectBitmoji()
-                    }
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.blue)
-                    )
-                    .foregroundColor(.white)
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemGray6))
-                )
-            }
-            
-            // Custom avatar options
-            VStack(spacing: 15) {
-                Text("Or Customize Your Own")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 15) {
-                    CustomizationRow(title: "Skin Tone", value: avatar.skinTone) {
-                        showingSkinTonePicker = true
-                    }
-                    
-                    CustomizationRow(title: "Hair Style", value: avatar.hairStyle) {
-                        showingHairStylePicker = true
-                    }
-                    
-                    CustomizationRow(title: "Hair Color", value: avatar.hairColor) {
-                        showingHairColorPicker = true
-                    }
-                    
-                    CustomizationRow(title: "Outfit", value: avatar.outfit) {
-                        showingOutfitPicker = true
-                    }
-                    
-                    CustomizationRow(title: "Shoes", value: avatar.shoes) {
-                        showingShoesPicker = true
-                    }
-                    
-                    CustomizationRow(title: "Expression", value: avatar.expression) {
-                        showingExpressionPicker = true
-                    }
-                }
-            }
-            
-            Spacer()
-            
-            // Navigation buttons
-            HStack {
-                Button("Back") {
-                    withAnimation {
-                        currentStep -= 1
-                    }
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                
-                Spacer()
-                
-                Button("Continue") {
-                    withAnimation {
-                        currentStep += 1
-                    }
-                }
-                .buttonStyle(PrimaryButtonStyle())
-            }
-        }
-        .padding()
+        GatherTownAvatarCreator(avatar: $avatar)
     }
     
     private func connectBitmoji() {
@@ -945,4 +841,857 @@ struct SecondaryButtonStyle: ButtonStyle {
 #Preview {
     OnboardingView()
         .environmentObject(AppStateManager())
-} 
+}
+
+// MARK: - Gather Town Style Avatar Creator
+
+struct GatherTownAvatarCreator: View {
+    @Binding var avatar: Avatar
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var selectedCategory: AvatarCategory = .hair
+    @State private var selectedColor: Color = .blue
+    @State private var showingColorPicker = false
+    @State private var isRandomizing = false
+    
+    private let categories: [AvatarCategory] = [
+        .hair, .eyes, .outfit, .accessories, .expression, .body
+    ]
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            VStack(spacing: 8) {
+                Text("Create Your Avatar")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                
+                Text("Customize your character to represent you in your family home")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.top)
+            
+            // Main content area
+            HStack(spacing: 20) {
+                // Left side - Avatar preview
+                VStack(spacing: 20) {
+                    // Large avatar preview
+                    ZStack {
+                        // Background
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(red: 0.95, green: 0.97, blue: 1.0),
+                                        Color(red: 0.90, green: 0.94, blue: 0.98)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 280, height: 320)
+                            .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                        
+                        // Avatar
+                        GatherTownAvatarPreview(avatar: avatar)
+                            .frame(width: 200, height: 240)
+                    }
+                    
+                    // Color picker section
+                    if showingColorPicker {
+                        VStack(spacing: 12) {
+                            Text("Color")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                            
+                            HStack(spacing: 12) {
+                                ForEach(avatarColors, id: \.self) { color in
+                                    Button(action: {
+                                        selectedColor = color
+                                        updateAvatarColor()
+                                    }) {
+                                        Circle()
+                                            .fill(color)
+                                            .frame(width: 40, height: 40)
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(selectedColor == color ? Color.blue : Color.clear, lineWidth: 3)
+                                            )
+                                            .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                                    }
+                                    .scaleEffect(selectedColor == color ? 1.1 : 1.0)
+                                    .animation(.easeInOut(duration: 0.2), value: selectedColor)
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 15)
+                                .fill(Color.white)
+                                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                        )
+                    }
+                }
+                .frame(width: 320)
+                
+                // Right side - Customization options
+                VStack(spacing: 20) {
+                    // Category tabs
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(categories, id: \.self) { category in
+                                CategoryTab(
+                                    category: category,
+                                    isSelected: selectedCategory == category
+                                ) {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        selectedCategory = category
+                                        showingColorPicker = category.hasColorOptions
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // Options grid
+                    ScrollView {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
+                            ForEach(optionsForCategory(selectedCategory), id: \.self) { option in
+                                OptionThumbnail(
+                                    option: option,
+                                    category: selectedCategory,
+                                    isSelected: isOptionSelected(option, category: selectedCategory)
+                                ) {
+                                    selectOption(option, category: selectedCategory)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .frame(maxHeight: 400)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal)
+            
+            // Footer buttons
+            HStack(spacing: 20) {
+                Button(action: randomizeAvatar) {
+                    HStack {
+                        Image(systemName: "shuffle")
+                            .font(.title3)
+                        Text("Randomize")
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [.purple, .purple.opacity(0.8)]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .scaleEffect(isRandomizing ? 0.95 : 1.0)
+                    .animation(.easeInOut(duration: 0.1), value: isRandomizing)
+                }
+                
+                Spacer()
+                
+                Button("Confirm Avatar") {
+                    // Avatar is already updated in real-time
+                    // Just dismiss or continue
+                }
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 15)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [.blue, .blue.opacity(0.8)]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 15))
+                .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
+        }
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.95, green: 0.97, blue: 1.0),
+                    Color(red: 0.90, green: 0.94, blue: 0.98)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+    }
+    
+    private var avatarColors: [Color] {
+        switch selectedCategory {
+        case .hair:
+            return [
+                Color(red: 0.6, green: 0.4, blue: 0.2), // Brown
+                Color.black,
+                Color(red: 0.9, green: 0.8, blue: 0.6), // Blonde
+                Color(red: 0.8, green: 0.4, blue: 0.2), // Red
+                Color(red: 0.5, green: 0.5, blue: 0.5), // Gray
+                Color(red: 0.3, green: 0.6, blue: 0.9)  // Blue
+            ]
+        case .eyes:
+            return [
+                Color(red: 0.6, green: 0.4, blue: 0.2), // Brown
+                Color(red: 0.3, green: 0.6, blue: 0.9), // Blue
+                Color(red: 0.3, green: 0.7, blue: 0.4), // Green
+                Color(red: 0.7, green: 0.6, blue: 0.3), // Hazel
+                Color.black,
+                Color(red: 0.8, green: 0.8, blue: 0.8)  // Gray
+            ]
+        case .outfit:
+            return [
+                Color.blue,
+                Color.red,
+                Color.green,
+                Color.purple,
+                Color.orange,
+                Color(red: 0.2, green: 0.2, blue: 0.2)  // Black
+            ]
+        default:
+            return [.blue, .red, .green, .purple, .orange, .pink]
+        }
+    }
+    
+    private func optionsForCategory(_ category: AvatarCategory) -> [String] {
+        switch category {
+        case .hair:
+            return ["short", "long", "curly", "straight", "wavy", "spiky", "bald", "bob", "ponytail"]
+        case .eyes:
+            return ["normal", "happy", "sad", "angry", "surprised", "wink", "sleepy", "cool", "glasses"]
+        case .outfit:
+            return ["casual", "formal", "sporty", "elegant", "business", "party", "pajamas", "uniform", "costume"]
+        case .accessories:
+            return ["none", "hat", "glasses", "earrings", "necklace", "watch", "scarf", "bag", "umbrella"]
+        case .expression:
+            return ["happy", "sad", "excited", "calm", "surprised", "angry", "confused", "wink", "laugh"]
+        case .body:
+            return ["average", "tall", "short", "slim", "athletic", "curvy", "muscular", "petite", "plus"]
+        }
+    }
+    
+    private func isOptionSelected(_ option: String, category: AvatarCategory) -> Bool {
+        switch category {
+        case .hair:
+            return avatar.hairStyle == option
+        case .eyes:
+            return avatar.eyeColor == option
+        case .outfit:
+            return avatar.outfit == option
+        case .accessories:
+            // Handle "none" option specially
+            if option == "none" {
+                return avatar.accessories.isEmpty
+            }
+            return avatar.accessories.contains(option)
+        case .expression:
+            return avatar.expression == option
+        case .body:
+            return avatar.bodyType == option
+        }
+    }
+    
+    private func selectOption(_ option: String, category: AvatarCategory) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            switch category {
+            case .hair:
+                avatar.hairStyle = option
+            case .eyes:
+                avatar.eyeColor = option
+            case .outfit:
+                avatar.outfit = option
+            case .accessories:
+                // Handle "none" option specially
+                if option == "none" {
+                    avatar.accessories.removeAll()
+                } else {
+                    // Toggle the accessory
+                    if avatar.accessories.contains(option) {
+                        avatar.accessories.removeAll { $0 == option }
+                    } else {
+                        // Ensure we don't add duplicates
+                        if !avatar.accessories.contains(option) {
+                            avatar.accessories.append(option)
+                        }
+                    }
+                }
+            case .expression:
+                avatar.expression = option
+            case .body:
+                avatar.bodyType = option
+            }
+        }
+    }
+    
+    private func updateAvatarColor() {
+        // Update the appropriate color property based on selected category
+        // This would need to be implemented based on your Avatar model structure
+    }
+    
+    private func randomizeAvatar() {
+        isRandomizing = true
+        
+        // Get safe arrays with fallbacks
+        let hairOptions = optionsForCategory(.hair)
+        let eyeOptions = optionsForCategory(.eyes)
+        let outfitOptions = optionsForCategory(.outfit)
+        let expressionOptions = optionsForCategory(.expression)
+        let bodyOptions = optionsForCategory(.body)
+        let hairColors = ["brown", "black", "blonde", "red"]
+        let skinTones = ["light", "medium", "dark"]
+        
+        // Randomize all avatar properties with safe array access
+        withAnimation(.easeInOut(duration: 0.5)) {
+            avatar.hairStyle = hairOptions.isEmpty ? "short" : (hairOptions.randomElement() ?? "short")
+            avatar.hairColor = hairColors.isEmpty ? "brown" : (hairColors.randomElement() ?? "brown")
+            avatar.eyeColor = eyeOptions.isEmpty ? "normal" : (eyeOptions.randomElement() ?? "normal")
+            avatar.outfit = outfitOptions.isEmpty ? "casual" : (outfitOptions.randomElement() ?? "casual")
+            avatar.expression = expressionOptions.isEmpty ? "happy" : (expressionOptions.randomElement() ?? "happy")
+            avatar.bodyType = bodyOptions.isEmpty ? "average" : (bodyOptions.randomElement() ?? "average")
+            avatar.skinTone = skinTones.isEmpty ? "light" : (skinTones.randomElement() ?? "light")
+            
+            // Clear accessories and add 1-2 random ones
+            avatar.accessories.removeAll()
+            let accessoryOptions = optionsForCategory(.accessories).filter { $0 != "none" }
+            if !accessoryOptions.isEmpty {
+                let numAccessories = Int.random(in: 0...min(2, accessoryOptions.count))
+                for _ in 0..<numAccessories {
+                    if let randomAccessory = accessoryOptions.randomElement() {
+                        avatar.accessories.append(randomAccessory)
+                    }
+                }
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            isRandomizing = false
+        }
+    }
+}
+
+// MARK: - Supporting Views
+
+struct CategoryTab: View {
+    let category: AvatarCategory
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: category.icon)
+                    .font(.title2)
+                    .foregroundColor(isSelected ? .white : .primary)
+                
+                Text(category.title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(isSelected ? .white : .primary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? 
+                          LinearGradient(gradient: Gradient(colors: [.blue, .blue.opacity(0.8)]), startPoint: .leading, endPoint: .trailing) :
+                          LinearGradient(gradient: Gradient(colors: [Color.white, Color(.systemGray6)]), startPoint: .leading, endPoint: .trailing)
+                    )
+                    .shadow(color: isSelected ? .blue.opacity(0.3) : .clear, radius: 4, x: 0, y: 2)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
+    }
+}
+
+struct OptionThumbnail: View {
+    let option: String
+    let category: AvatarCategory
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                // Thumbnail preview
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(.systemGray6))
+                        .frame(width: 60, height: 60)
+                    
+                    Image(systemName: thumbnailIcon)
+                        .font(.title2)
+                        .foregroundColor(isSelected ? .white : .primary)
+                }
+                
+                Text(option.capitalized)
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundColor(isSelected ? .white : .primary)
+                    .lineLimit(1)
+            }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isSelected ? 
+                          LinearGradient(gradient: Gradient(colors: [.blue, .blue.opacity(0.8)]), startPoint: .leading, endPoint: .trailing) :
+                          LinearGradient(gradient: Gradient(colors: [Color.white, Color(.systemGray6)]), startPoint: .leading, endPoint: .trailing)
+                    )
+                    .shadow(color: isSelected ? .blue.opacity(0.3) : .clear, radius: 3, x: 0, y: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
+    }
+    
+    private var thumbnailIcon: String {
+        switch category {
+        case .hair:
+            switch option {
+            case "short": return "scissors"
+            case "long": return "person.fill"
+            case "curly": return "waveform.path"
+            case "straight": return "line.diagonal"
+            case "wavy": return "waveform"
+            case "spiky": return "flame"
+            case "bald": return "circle"
+            case "bob": return "person.crop.circle"
+            case "ponytail": return "arrow.up"
+            default: return "person.fill"
+            }
+        case .eyes:
+            switch option {
+            case "normal": return "eye"
+            case "happy": return "face.smiling"
+            case "sad": return "face.dashed"
+            case "angry": return "flame"
+            case "surprised": return "exclamationmark.circle"
+            case "wink": return "eye.slash"
+            case "sleepy": return "bed.double"
+            case "cool": return "sunglasses"
+            case "glasses": return "eyeglasses"
+            default: return "eye"
+            }
+        case .outfit:
+            switch option {
+            case "casual": return "tshirt"
+            case "formal": return "person.fill"
+            case "sporty": return "figure.run"
+            case "elegant": return "crown"
+            case "business": return "briefcase"
+            case "party": return "party.popper"
+            case "pajamas": return "bed.double"
+            case "uniform": return "person.badge.plus"
+            case "costume": return "theatermasks"
+            default: return "tshirt"
+            }
+        case .accessories:
+            switch option {
+            case "none": return "minus.circle"
+            case "hat": return "crown"
+            case "glasses": return "eyeglasses"
+            case "earrings": return "circle"
+            case "necklace": return "heart"
+            case "watch": return "clock"
+            case "scarf": return "rectangle"
+            case "bag": return "bag"
+            case "umbrella": return "umbrella"
+            default: return "minus.circle"
+            }
+        case .expression:
+            switch option {
+            case "happy": return "face.smiling"
+            case "sad": return "face.dashed"
+            case "excited": return "star.fill"
+            case "calm": return "leaf.fill"
+            case "surprised": return "exclamationmark.circle"
+            case "angry": return "flame"
+            case "confused": return "questionmark.circle"
+            case "wink": return "eye.slash"
+            case "laugh": return "face.smiling.inverse"
+            default: return "face.smiling"
+            }
+        case .body:
+            return "person.fill"
+        }
+    }
+}
+
+struct GatherTownAvatarPreview: View {
+    let avatar: Avatar
+    
+    var body: some View {
+        ZStack {
+            // Body
+            VStack(spacing: 0) {
+                // Head
+                ZStack {
+                    Circle()
+                        .fill(skinToneColor)
+                        .frame(width: 80, height: 80)
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    
+                    // Hair
+                    if avatar.hairStyle != "bald" {
+                        hairView
+                    }
+                    
+                    // Eyes
+                    eyesView
+                    
+                    // Mouth/Expression
+                    expressionView
+                    
+                    // Accessories
+                    accessoriesView
+                }
+                
+                // Body
+                Rectangle()
+                    .fill(outfitColor)
+                    .frame(width: 60, height: 80)
+                    .overlay(
+                        // Arms
+                        HStack {
+                            Rectangle()
+                                .fill(skinToneColor)
+                                .frame(width: 8, height: 30)
+                                .offset(x: -8, y: -10)
+                            
+                            Spacer()
+                            
+                            Rectangle()
+                                .fill(skinToneColor)
+                                .frame(width: 8, height: 30)
+                                .offset(x: 8, y: -10)
+                        }
+                    )
+                
+                // Legs
+                HStack(spacing: 8) {
+                    Rectangle()
+                        .fill(pantsColor)
+                        .frame(width: 12, height: 40)
+                    
+                    Rectangle()
+                        .fill(pantsColor)
+                        .frame(width: 12, height: 40)
+                }
+                .offset(y: -2)
+                
+                // Shoes
+                HStack(spacing: 8) {
+                    Ellipse()
+                        .fill(shoesColor)
+                        .frame(width: 16, height: 8)
+                    
+                    Ellipse()
+                        .fill(shoesColor)
+                        .frame(width: 16, height: 8)
+                }
+                .offset(y: -4)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var hairView: some View {
+        switch avatar.hairStyle {
+        case "short":
+            Rectangle()
+                .fill(hairColor)
+                .frame(width: 70, height: 12)
+                .offset(y: -35)
+        case "long":
+            Rectangle()
+                .fill(hairColor)
+                .frame(width: 60, height: 25)
+                .offset(y: -25)
+        case "curly":
+            Circle()
+                .fill(hairColor)
+                .frame(width: 75, height: 20)
+                .offset(y: -30)
+        case "straight":
+            Rectangle()
+                .fill(hairColor)
+                .frame(width: 50, height: 20)
+                .offset(y: -30)
+        case "wavy":
+            Path { path in
+                path.move(to: CGPoint(x: -25, y: -35))
+                path.addCurve(to: CGPoint(x: 25, y: -35), control1: CGPoint(x: -10, y: -40), control2: CGPoint(x: 10, y: -40))
+            }
+            .stroke(hairColor, lineWidth: 8)
+        case "spiky":
+            ForEach(0..<5, id: \.self) { i in
+                Triangle()
+                    .fill(hairColor)
+                    .frame(width: 8, height: 12)
+                    .offset(x: CGFloat(i * 4 - 8), y: -35)
+            }
+        case "bob":
+            Circle()
+                .fill(hairColor)
+                .frame(width: 65, height: 15)
+                .offset(y: -30)
+        case "ponytail":
+            Circle()
+                .fill(hairColor)
+                .frame(width: 20, height: 25)
+                .offset(x: 15, y: -25)
+        default:
+            Rectangle()
+                .fill(hairColor)
+                .frame(width: 70, height: 12)
+                .offset(y: -35)
+        }
+    }
+    
+    @ViewBuilder
+    private var eyesView: some View {
+        switch avatar.eyeColor {
+        case "normal":
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(.black)
+                    .frame(width: 8, height: 8)
+                Circle()
+                    .fill(.black)
+                    .frame(width: 8, height: 8)
+            }
+            .offset(y: -5)
+        case "happy":
+            HStack(spacing: 12) {
+                Path { path in
+                    path.move(to: CGPoint(x: -4, y: -2))
+                    path.addQuadCurve(to: CGPoint(x: 4, y: -2), control: CGPoint(x: 0, y: 2))
+                }
+                .stroke(.black, lineWidth: 2)
+                
+                Path { path in
+                    path.move(to: CGPoint(x: -4, y: -2))
+                    path.addQuadCurve(to: CGPoint(x: 4, y: -2), control: CGPoint(x: 0, y: 2))
+                }
+                .stroke(.black, lineWidth: 2)
+            }
+            .offset(y: -5)
+        case "sad":
+            HStack(spacing: 12) {
+                Path { path in
+                    path.move(to: CGPoint(x: -4, y: 2))
+                    path.addQuadCurve(to: CGPoint(x: 4, y: 2), control: CGPoint(x: 0, y: -2))
+                }
+                .stroke(.black, lineWidth: 2)
+                
+                Path { path in
+                    path.move(to: CGPoint(x: -4, y: 2))
+                    path.addQuadCurve(to: CGPoint(x: 4, y: 2), control: CGPoint(x: 0, y: -2))
+                }
+                .stroke(.black, lineWidth: 2)
+            }
+            .offset(y: -5)
+        case "wink":
+            HStack(spacing: 12) {
+                Path { path in
+                    path.move(to: CGPoint(x: -4, y: -2))
+                    path.addQuadCurve(to: CGPoint(x: 4, y: -2), control: CGPoint(x: 0, y: 2))
+                }
+                .stroke(.black, lineWidth: 2)
+                
+                Circle()
+                    .fill(.black)
+                    .frame(width: 8, height: 8)
+            }
+            .offset(y: -5)
+        default:
+            HStack(spacing: 12) {
+                Circle()
+                    .fill(.black)
+                    .frame(width: 8, height: 8)
+                Circle()
+                    .fill(.black)
+                    .frame(width: 8, height: 8)
+            }
+            .offset(y: -5)
+        }
+    }
+    
+    @ViewBuilder
+    private var expressionView: some View {
+        switch avatar.expression {
+        case "happy":
+            Path { path in
+                path.move(to: CGPoint(x: -8, y: 8))
+                path.addQuadCurve(to: CGPoint(x: 8, y: 8), control: CGPoint(x: 0, y: 15))
+            }
+            .stroke(.black, lineWidth: 2)
+        case "sad":
+            Path { path in
+                path.move(to: CGPoint(x: -8, y: 15))
+                path.addQuadCurve(to: CGPoint(x: 8, y: 15), control: CGPoint(x: 0, y: 8))
+            }
+            .stroke(.black, lineWidth: 2)
+        case "excited":
+            Path { path in
+                path.move(to: CGPoint(x: -8, y: 8))
+                path.addQuadCurve(to: CGPoint(x: 8, y: 8), control: CGPoint(x: 0, y: 18))
+            }
+            .stroke(.black, lineWidth: 3)
+        case "surprised":
+            Circle()
+                .fill(.black)
+                .frame(width: 12, height: 12)
+                .offset(y: 8)
+        default:
+            Path { path in
+                path.move(to: CGPoint(x: -6, y: 8))
+                path.addQuadCurve(to: CGPoint(x: 6, y: 8), control: CGPoint(x: 0, y: 12))
+            }
+            .stroke(.black, lineWidth: 2)
+        }
+    }
+    
+    private var accessoriesView: some View {
+        ZStack {
+            // Only render accessories if the array is not empty
+            if !avatar.accessories.isEmpty {
+                if avatar.accessories.contains("hat") {
+                    Ellipse()
+                        .fill(.red)
+                        .frame(width: 60, height: 15)
+                        .offset(y: -45)
+                }
+                
+                if avatar.accessories.contains("glasses") {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .stroke(.black, lineWidth: 2)
+                            .frame(width: 20, height: 20)
+                        Circle()
+                            .stroke(.black, lineWidth: 2)
+                            .frame(width: 20, height: 20)
+                    }
+                    .offset(y: -5)
+                }
+                
+                if avatar.accessories.contains("earrings") {
+                    HStack(spacing: 50) {
+                        Circle()
+                            .fill(Color(red: 1.0, green: 0.84, blue: 0.0))
+                            .frame(width: 6, height: 6)
+                        Circle()
+                            .fill(Color(red: 1.0, green: 0.84, blue: 0.0))
+                            .frame(width: 6, height: 6)
+                    }
+                    .offset(y: 0)
+                }
+            }
+        }
+    }
+    
+    private var skinToneColor: Color {
+        switch avatar.skinTone {
+        case "light": return Color(red: 0.98, green: 0.9, blue: 0.8)
+        case "medium": return Color(red: 0.9, green: 0.7, blue: 0.5)
+        case "dark": return Color(red: 0.6, green: 0.4, blue: 0.3)
+        default: return Color(red: 0.98, green: 0.9, blue: 0.8)
+        }
+    }
+    
+    private var hairColor: Color {
+        switch avatar.hairColor {
+        case "brown": return Color(red: 0.6, green: 0.4, blue: 0.2)
+        case "black": return Color.black
+        case "blonde": return Color(red: 0.9, green: 0.8, blue: 0.6)
+        case "red": return Color(red: 0.8, green: 0.4, blue: 0.2)
+        default: return Color(red: 0.6, green: 0.4, blue: 0.2)
+        }
+    }
+    
+    private var outfitColor: Color {
+        switch avatar.outfit {
+        case "casual": return Color.blue
+        case "formal": return Color(red: 0.2, green: 0.2, blue: 0.2)
+        case "sporty": return Color.red
+        case "elegant": return Color.purple
+        case "business": return Color(red: 0.3, green: 0.3, blue: 0.3)
+        case "party": return Color.pink
+        case "pajamas": return Color(red: 0.8, green: 0.8, blue: 0.9)
+        case "uniform": return Color.green
+        case "costume": return Color.orange
+        default: return Color.blue
+        }
+    }
+    
+    private var pantsColor: Color {
+        Color(red: 0.2, green: 0.2, blue: 0.4)
+    }
+    
+    private var shoesColor: Color {
+        switch avatar.shoes {
+        case "sneakers": return Color(red: 0.8, green: 0.8, blue: 0.8)
+        case "formal": return Color.black
+        case "sporty": return Color.red
+        default: return Color(red: 0.8, green: 0.8, blue: 0.8)
+        }
+    }
+}
+
+// MARK: - Supporting Types
+
+enum AvatarCategory: String, CaseIterable {
+    case hair = "Hair"
+    case eyes = "Eyes"
+    case outfit = "Outfit"
+    case accessories = "Accessories"
+    case expression = "Expression"
+    case body = "Body"
+    
+    var title: String {
+        return rawValue
+    }
+    
+    var icon: String {
+        switch self {
+        case .hair: return "scissors"
+        case .eyes: return "eye"
+        case .outfit: return "tshirt"
+        case .accessories: return "crown"
+        case .expression: return "face.smiling"
+        case .body: return "person.fill"
+        }
+    }
+    
+    var hasColorOptions: Bool {
+        switch self {
+        case .hair, .eyes, .outfit:
+            return true
+        default:
+            return false
+        }
+    }
+}
+
+ 

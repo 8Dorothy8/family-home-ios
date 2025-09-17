@@ -7,15 +7,19 @@ struct HouseView: View {
     @State private var showingPetCare = false
     @State private var showingFamilyActivities = false
     @State private var showingMessages = false
+    @State private var showingCalendar = false
+    @State private var showingCall = false
+    @State private var selectedRoom: RoomType? = nil
+    @State private var showingRoomDetail = false
     
     var body: some View {
         NavigationView {
             ZStack {
-                // Beautiful gradient background
+                // Gather Town style background
                 LinearGradient(
                     gradient: Gradient(colors: [
                         Color(red: 0.95, green: 0.97, blue: 1.0),
-                        Color(red: 0.98, green: 0.98, blue: 1.0)
+                        Color(red: 0.90, green: 0.94, blue: 0.98)
                     ]),
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -23,10 +27,10 @@ struct HouseView: View {
                 .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // House layout
+                    // Gather Town style house map
                     ScrollView([.horizontal, .vertical]) {
-                        houseLayoutView
-                            .frame(minWidth: 450, minHeight: 700)
+                        gatherTownMapView
+                            .frame(minWidth: 600, minHeight: 800)
                             .padding()
                     }
                     
@@ -73,305 +77,193 @@ struct HouseView: View {
         .sheet(isPresented: $showingMessages) {
             MessagesView()
         }
+        .sheet(isPresented: $showingCalendar) {
+            CalendarView()
+        }
+        .sheet(isPresented: $showingCall) {
+            CallView()
+        }
+        .sheet(isPresented: $showingRoomDetail) {
+            if let roomType = selectedRoom {
+                RoomDetailView(roomType: roomType)
+            }
+        }
     }
     
-    private var houseLayoutView: some View {
+    private var gatherTownMapView: some View {
         ZStack {
-            // Floor
+            // Large floor area (Gather Town style)
             Rectangle()
                 .fill(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color(red: 0.95, green: 0.93, blue: 0.88), // Warm wood
-                            Color(red: 0.92, green: 0.90, blue: 0.85)
+                            Color(red: 0.92, green: 0.90, blue: 0.85), // Warm wood
+                            Color(red: 0.88, green: 0.86, blue: 0.81)
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(width: 400, height: 600)
+                .frame(width: 550, height: 750)
                 .overlay(
-                    // Wood grain pattern
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color.clear,
-                                    Color.black.opacity(0.05)
-                                ]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                )
-                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-            
-            // Walls
-            VStack(spacing: 0) {
-                // Top wall
-                Rectangle()
-                    .fill(Color(red: 0.98, green: 0.96, blue: 0.94))
-                    .frame(width: 400, height: 20)
-                
-                HStack(spacing: 0) {
-                    // Left wall
-                    Rectangle()
-                        .fill(Color(red: 0.98, green: 0.96, blue: 0.94))
-                        .frame(width: 20, height: 560)
-                    
-                    // Main living space
-                    ZStack {
-                        // Living Room (top left)
-                        livingRoomView
-                        
-                        // Kitchen (top right)
-                        kitchenView
-                        
-                        // Dining Room (bottom left)
-                        diningRoomView
-                        
-                        // Bedroom (bottom right)
-                        bedroomView
+                    // Subtle grid pattern like Gather Town
+                    Path { path in
+                        for i in stride(from: 0, through: 550, by: 50) {
+                            path.move(to: CGPoint(x: i, y: 0))
+                            path.addLine(to: CGPoint(x: i, y: 750))
+                        }
+                        for i in stride(from: 0, through: 750, by: 50) {
+                            path.move(to: CGPoint(x: 0, y: i))
+                            path.addLine(to: CGPoint(x: 550, y: i))
+                        }
                     }
-                    .frame(width: 360, height: 560)
-                    
-                    // Right wall
-                    Rectangle()
-                        .fill(Color(red: 0.98, green: 0.96, blue: 0.94))
-                        .frame(width: 20, height: 560)
-                }
-                
-                // Bottom wall
-                Rectangle()
-                    .fill(Color(red: 0.98, green: 0.96, blue: 0.94))
-                    .frame(width: 400, height: 20)
-            }
-        }
-        .frame(width: 400, height: 600)
-    }
-    
-    private var livingRoomView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(red: 0.95, green: 0.97, blue: 1.0),
-                            Color(red: 0.90, green: 0.94, blue: 0.98)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    .stroke(Color.black.opacity(0.05), lineWidth: 1)
                 )
-                .frame(width: 180, height: 280)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.blue.opacity(0.3), lineWidth: 2)
-                )
+                .shadow(color: .black.opacity(0.1), radius: 15, x: 0, y: 8)
             
-            VStack(spacing: 8) {
-                Text("Living Room")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.blue)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white.opacity(0.9))
-                    )
-                
-                // Furniture
-                HStack(spacing: 15) {
-                    // Couch
-                    VStack {
-                        Image(systemName: "sofa.fill")
-                            .font(.title2)
-                            .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.2))
-                        Text("Couch")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+            // Room icons positioned like Gather Town
+            VStack(spacing: 80) {
+                // Top row
+                HStack(spacing: 100) {
+                    // Living Room
+                    GatherTownRoomIcon(
+                        roomType: .livingRoom,
+                        title: "Living Room",
+                        subtitle: "TV & Games",
+                        icon: "tv.fill",
+                        color: .blue,
+                        position: CGPoint(x: 150, y: 120)
+                    ) {
+                        selectedRoom = .livingRoom
+                        showingRoomDetail = true
                     }
                     
-                    // TV
-                    VStack {
-                        Image(systemName: "tv.fill")
-                            .font(.title2)
-                            .foregroundColor(.black)
-                        Text("TV")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                    // Kitchen
+                    GatherTownRoomIcon(
+                        roomType: .kitchen,
+                        title: "Kitchen",
+                        subtitle: "Cooking",
+                        icon: "flame.fill",
+                        color: .orange,
+                        position: CGPoint(x: 400, y: 120)
+                    ) {
+                        selectedRoom = .kitchen
+                        showingRoomDetail = true
                     }
                 }
                 
-                Spacer()
-            }
-            .padding(.top, 8)
-        }
-        .position(x: 90, y: 140)
-    }
-    
-    private var kitchenView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(red: 1.0, green: 0.95, blue: 0.90),
-                            Color(red: 0.98, green: 0.93, blue: 0.88)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 180, height: 280)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.orange.opacity(0.3), lineWidth: 2)
-                )
-            
-            VStack(spacing: 8) {
-                Text("Kitchen")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.orange)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white.opacity(0.9))
-                    )
-                
-                // Kitchen furniture
-                HStack(spacing: 15) {
-                    // Stove
-                    VStack {
-                        Image(systemName: "flame.fill")
-                            .font(.title2)
-                            .foregroundColor(.red)
-                        Text("Stove")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                // Middle row
+                HStack(spacing: 100) {
+                    // Dining Room
+                    GatherTownRoomIcon(
+                        roomType: .diningRoom,
+                        title: "Dining Room",
+                        subtitle: "Family Meals",
+                        icon: "table.furniture",
+                        color: .green,
+                        position: CGPoint(x: 150, y: 300)
+                    ) {
+                        selectedRoom = .diningRoom
+                        showingRoomDetail = true
                     }
                     
-                    // Sink
-                    VStack {
-                        Image(systemName: "drop.fill")
-                            .font(.title2)
-                            .foregroundColor(.blue)
-                        Text("Sink")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                    // Bedroom
+                    GatherTownRoomIcon(
+                        roomType: .bedroom,
+                        title: "Bedroom",
+                        subtitle: "Sleep & Rest",
+                        icon: "bed.double.fill",
+                        color: .purple,
+                        position: CGPoint(x: 400, y: 300)
+                    ) {
+                        selectedRoom = .bedroom
+                        showingRoomDetail = true
                     }
                 }
                 
-                Spacer()
+                // Bottom row
+                HStack(spacing: 100) {
+                    // Office
+                    GatherTownRoomIcon(
+                        roomType: .office,
+                        title: "Office",
+                        subtitle: "Work & Study",
+                        icon: "desktopcomputer",
+                        color: .gray,
+                        position: CGPoint(x: 150, y: 480)
+                    ) {
+                        selectedRoom = .office
+                        showingRoomDetail = true
+                    }
+                    
+                    // Playroom
+                    GatherTownRoomIcon(
+                        roomType: .playroom,
+                        title: "Playroom",
+                        subtitle: "Games & Fun",
+                        icon: "gamecontroller.fill",
+                        color: .pink,
+                        position: CGPoint(x: 400, y: 480)
+                    ) {
+                        selectedRoom = .playroom
+                        showingRoomDetail = true
+                    }
+                }
             }
-            .padding(.top, 8)
+            
+            // Family members as avatars (like Gather Town)
+            ForEach(appState.familyMembers, id: \.id) { member in
+                FamilyMemberAvatar(member: member)
+                    .position(memberAvatarPosition(for: member))
+            }
+            
+            // Virtual pet
+            if let pet = appState.virtualPet {
+                VirtualPetAvatar(pet: pet)
+                    .position(CGPoint(x: 500, y: 200))
+            }
+            
+            // Activity indicators
+            ForEach(appState.familyMembers.filter { $0.currentActivity != nil }, id: \.id) { member in
+                if let activity = member.currentActivity {
+                    ActivityBubble(activity: activity)
+                        .position(activityBubblePosition(for: member))
+                }
+            }
         }
-        .position(x: 270, y: 140)
+        .frame(width: 550, height: 750)
     }
     
-    private var diningRoomView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(red: 0.90, green: 0.95, blue: 0.90),
-                            Color(red: 0.85, green: 0.92, blue: 0.87)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 180, height: 280)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.green.opacity(0.3), lineWidth: 2)
-                )
-            
-            VStack(spacing: 8) {
-                Text("Dining Room")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.green)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white.opacity(0.9))
-                    )
-                
-                // Dining furniture
-                VStack(spacing: 8) {
-                    Image(systemName: "table.furniture")
-                        .font(.title2)
-                        .foregroundColor(Color(red: 0.5, green: 0.3, blue: 0.1))
-                    Text("Dining Table")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-            }
-            .padding(.top, 8)
-        }
-        .position(x: 90, y: 420)
+    private func memberAvatarPosition(for member: User) -> CGPoint {
+        // Position family members near their current activity room
+        let basePositions: [CGPoint] = [
+            CGPoint(x: 150, y: 120), // Living room
+            CGPoint(x: 400, y: 120), // Kitchen
+            CGPoint(x: 150, y: 300), // Dining room
+            CGPoint(x: 400, y: 300), // Bedroom
+            CGPoint(x: 150, y: 480), // Office
+            CGPoint(x: 400, y: 480)  // Playroom
+        ]
+        
+        let index = member.id.uuidString.hashValue % basePositions.count
+        let basePosition = basePositions[index]
+        
+        // Add some random offset for natural positioning
+        let offsetX = CGFloat(member.id.uuidString.hashValue % 60) - 30
+        let offsetY = CGFloat(member.id.uuidString.hashValue % 40) - 20
+        
+        return CGPoint(x: basePosition.x + offsetX, y: basePosition.y + offsetY)
     }
     
-    private var bedroomView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(red: 0.95, green: 0.90, blue: 0.95),
-                            Color(red: 0.92, green: 0.87, blue: 0.92)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 180, height: 280)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.purple.opacity(0.3), lineWidth: 2)
-                )
-            
-            VStack(spacing: 8) {
-                Text("Bedroom")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.purple)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white.opacity(0.9))
-                    )
-                
-                // Bedroom furniture
-                VStack(spacing: 8) {
-                    Image(systemName: "bed.double.fill")
-                        .font(.title2)
-                        .foregroundColor(Color(red: 0.8, green: 0.8, blue: 0.9))
-                    Text("Bed")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-            }
-            .padding(.top, 8)
-        }
-        .position(x: 270, y: 420)
+    private func activityBubblePosition(for member: User) -> CGPoint {
+        let memberPos = memberAvatarPosition(for: member)
+        return CGPoint(x: memberPos.x, y: memberPos.y - 50)
     }
     
     private var bottomToolbar: some View {
         HStack(spacing: 0) {
             ToolbarButton(icon: "phone.fill", title: "Call", color: .green) {
-                // Handle call
+                showingCall = true
             }
             
             ToolbarButton(icon: "message.fill", title: "Messages", color: .blue) {
@@ -387,7 +279,7 @@ struct HouseView: View {
             }
             
             ToolbarButton(icon: "calendar", title: "Calendar", color: .red) {
-                // Handle calendar
+                showingCalendar = true
             }
         }
         .padding(.vertical, 15)
@@ -398,6 +290,404 @@ struct HouseView: View {
         )
         .padding(.horizontal)
         .padding(.bottom, 10)
+    }
+}
+
+// Gather Town style room icon
+struct GatherTownRoomIcon: View {
+    let roomType: RoomType
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let position: CGPoint
+    let onTap: () -> Void
+    
+    @State private var isPressed = false
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 12) {
+                // Room icon with background
+                ZStack {
+                    // Background circle
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    color.opacity(0.9),
+                                    color.opacity(0.7)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 80, height: 80)
+                        .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+                    
+                    // Icon
+                    Image(systemName: icon)
+                        .font(.system(size: 32, weight: .medium))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                }
+                .scaleEffect(isPressed ? 0.95 : (isHovered ? 1.05 : 1.0))
+                .animation(.easeInOut(duration: 0.2), value: isPressed)
+                .animation(.easeInOut(duration: 0.3), value: isHovered)
+                
+                // Room title
+                VStack(spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                )
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .position(position)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
+    }
+}
+
+// Family member avatar for Gather Town style
+struct FamilyMemberAvatar: View {
+    let member: User
+    @State private var isAnimating = false
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            // Avatar circle
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                member.isOnline ? Color.green.opacity(0.8) : Color.gray.opacity(0.6),
+                                member.isOnline ? Color.green.opacity(0.6) : Color.gray.opacity(0.4)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 50, height: 50)
+                    .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                
+                // Avatar image or initials
+                if member.avatar.useBitmoji, let bitmojiUrl = member.avatar.bitmojiAvatarUrl {
+                    AsyncImage(url: URL(string: bitmojiUrl)) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                    } placeholder: {
+                        Text(String(member.name.prefix(1)))
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                    }
+                } else {
+                    Text(String(member.name.prefix(1)))
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                }
+                
+                // Online indicator
+                if member.isOnline {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 12, height: 12)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: 2)
+                        )
+                        .offset(x: 18, y: -18)
+                }
+            }
+            .scaleEffect(isAnimating ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isAnimating)
+            
+            // Name
+            Text(member.name)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                )
+        }
+        .onAppear {
+            isAnimating = true
+        }
+    }
+}
+
+// Virtual pet avatar
+struct VirtualPetAvatar: View {
+    let pet: VirtualPet
+    @State private var isAnimating = false
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            // Pet icon
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.orange.opacity(0.8),
+                                Color.orange.opacity(0.6)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 45, height: 45)
+                    .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                
+                Image(systemName: petIcon)
+                    .font(.title2)
+                    .foregroundColor(.white)
+            }
+            .scaleEffect(isAnimating ? 1.1 : 1.0)
+            .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
+            
+            // Pet name
+            Text(pet.name)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                )
+        }
+        .onAppear {
+            isAnimating = true
+        }
+    }
+    
+    private var petIcon: String {
+        switch pet.type {
+        case .cat: return "pawprint.fill"
+        case .dog: return "pawprint.fill"
+        case .bird: return "bird.fill"
+        case .fish: return "fish.fill"
+        case .rabbit: return "hare.fill"
+        case .hamster: return "pawprint.fill"
+        case .turtle: return "tortoise.fill"
+        }
+    }
+}
+
+// Activity bubble
+struct ActivityBubble: View {
+    let activity: Activity
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: activityIcon)
+                .font(.caption)
+                .foregroundColor(.white)
+            
+            Text(activity.title)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.black.opacity(0.7))
+                .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+        )
+    }
+    
+    private var activityIcon: String {
+        switch activity.type {
+        case .watching: return "tv"
+        case .shopping: return "cart"
+        case .working: return "laptopcomputer"
+        case .exercising: return "figure.run"
+        case .eating: return "fork.knife"
+        case .relaxing: return "bed.double"
+        case .other: return "ellipsis"
+        }
+    }
+}
+
+// Room detail view
+struct RoomDetailView: View {
+    let roomType: RoomType
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                // Room header
+                VStack(spacing: 12) {
+                    Image(systemName: roomIcon)
+                        .font(.system(size: 60))
+                        .foregroundColor(roomColor)
+                    
+                    Text(roomTitle)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Text(roomDescription)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                .padding()
+                
+                // Room features
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+                    ForEach(roomFeatures, id: \.self) { feature in
+                        FeatureCard(feature: feature)
+                    }
+                }
+                .padding(.horizontal)
+                
+                Spacer()
+            }
+            .navigationTitle("Room Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+        }
+    }
+    
+    private var roomIcon: String {
+        switch roomType {
+        case .livingRoom: return "tv.fill"
+        case .kitchen: return "flame.fill"
+        case .diningRoom: return "table.furniture"
+        case .bedroom: return "bed.double.fill"
+        case .bathroom: return "shower.fill"
+        case .office: return "desktopcomputer"
+        case .playroom: return "gamecontroller.fill"
+        }
+    }
+    
+    private var roomColor: Color {
+        switch roomType {
+        case .livingRoom: return .blue
+        case .kitchen: return .orange
+        case .diningRoom: return .green
+        case .bedroom: return .purple
+        case .bathroom: return .cyan
+        case .office: return .gray
+        case .playroom: return .pink
+        }
+    }
+    
+    private var roomTitle: String {
+        switch roomType {
+        case .livingRoom: return "Living Room"
+        case .kitchen: return "Kitchen"
+        case .diningRoom: return "Dining Room"
+        case .bedroom: return "Bedroom"
+        case .bathroom: return "Bathroom"
+        case .office: return "Office"
+        case .playroom: return "Playroom"
+        }
+    }
+    
+    private var roomDescription: String {
+        switch roomType {
+        case .livingRoom: return "The heart of the home where family gathers for entertainment, games, and relaxation."
+        case .kitchen: return "Where delicious meals are prepared and family cooking adventures happen."
+        case .diningRoom: return "The perfect place for family meals, conversations, and celebrations."
+        case .bedroom: return "A peaceful retreat for rest, sleep, and personal time."
+        case .bathroom: return "Essential space for daily routines and self-care."
+        case .office: return "Dedicated workspace for productivity, study, and focused activities."
+        case .playroom: return "Fun-filled space for games, creativity, and family entertainment."
+        }
+    }
+    
+    private var roomFeatures: [String] {
+        switch roomType {
+        case .livingRoom: return ["TV & Entertainment", "Comfortable Seating", "Family Games", "Relaxation Space"]
+        case .kitchen: return ["Cooking Equipment", "Family Meals", "Recipe Sharing", "Kitchen Activities"]
+        case .diningRoom: return ["Family Dinners", "Conversations", "Celebrations", "Meal Planning"]
+        case .bedroom: return ["Rest & Sleep", "Personal Space", "Storage", "Privacy"]
+        case .bathroom: return ["Daily Routines", "Self-Care", "Hygiene", "Relaxation"]
+        case .office: return ["Work Space", "Study Area", "Productivity", "Focus Time"]
+        case .playroom: return ["Games & Toys", "Creative Activities", "Family Fun", "Entertainment"]
+        }
+    }
+}
+
+// Feature card for room details
+struct FeatureCard: View {
+    let feature: String
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: featureIcon)
+                .font(.title2)
+                .foregroundColor(.blue)
+            
+            Text(feature)
+                .font(.caption)
+                .fontWeight(.medium)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+    
+    private var featureIcon: String {
+        switch feature {
+        case let f where f.contains("TV"): return "tv"
+        case let f where f.contains("Seating"): return "sofa.fill"
+        case let f where f.contains("Games"): return "gamecontroller.fill"
+        case let f where f.contains("Cooking"): return "flame.fill"
+        case let f where f.contains("Meals"): return "fork.knife"
+        case let f where f.contains("Sleep"): return "bed.double.fill"
+        case let f where f.contains("Work"): return "laptopcomputer"
+        case let f where f.contains("Games"): return "gamecontroller.fill"
+        default: return "star.fill"
+        }
     }
 }
 

@@ -15,6 +15,15 @@ class AppStateManager: ObservableObject {
     @Published var notifications: [Notification] = []
     @Published var errorMessage: String?
     
+    // Computed properties for easier access
+    var familyMembers: [User] {
+        return currentFamily?.members ?? []
+    }
+    
+    var virtualPet: VirtualPet? {
+        return currentFamily?.virtualPet
+    }
+    
     private let locationManager = CLLocationManager()
     // private let firebaseManager = FirebaseManager.shared
     
